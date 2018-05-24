@@ -1,0 +1,17 @@
+.DS_Store
+Debug/
+Release/
+.xdchelp
+.config/
+.lauches/
+*.pdf
+!paper/figures/*.pdf
+*.aux
+*.log
+.DS_store
+*.bbl
+*.blg
+*.ipynb_checkpoints*
+*.out
+*.swp
+*.swo
