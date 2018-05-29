@@ -8,7 +8,7 @@
 #include "radio.h"
 
 /* Variables used for bit decoding in ISR */
-StateFunc frameDetectionStateFunc;
+func_ptr frameDetectionStateFunc;
 volatile uint8_t bitCounter, byteCounter, decodedBits;
 volatile uint16_t timeCapture;
 volatile bool potentialZero, recordFrame;
@@ -19,7 +19,7 @@ void rx_init(){
     RX_FUNC_SEL |= RX_PIN;                      // P1.6 options select (primary module function= TB0 CCR3)
 
 	/* Initialize state pointer for frame detection and recording */
-    frameDetectionStateFunc = (StateFunc) detectFrameState;
+    frameDetectionStateFunc = (func_ptr) detectFrameState;
 
     /* Initialize variables for RX decoding */
 	decodedBits = 0;
@@ -45,12 +45,11 @@ void stop_capture(){
 
 void *detectFrameState(){
 	if(decodedBits == PREAMBLE_BYTE){
-//TODO uncomment the following line when the mac sublayer is implemented
-//		channelBusy = true;
+		channelBusy = true;
 	}
+
 	if(decodedBits == START_DELIMITER_BYTE){
-//TODO uncomment the following line when the mac sublayer is implemented
-//		channelBusy = true;
+		channelBusy = true;
 		bitCounter = 0;
 		frame[byteCounter] = decodedBits;
 		byteCounter++;
@@ -69,8 +68,7 @@ void *catchFrameState(){
 	}
 	if(byteCounter == FRAME_LENGTH){
 		byteCounter = 0;
-//TODO implement the ring buffer
-		//error_t error = RingBuffer_Write(&frameBufferRx, &frame);
+		rbuf_write(&rx_buf,FRAME_LENGTH, frame);
 		return detectFrameState;
 	}
 	return catchFrameState;
@@ -115,7 +113,7 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
 			}
 
 			/* Detection and recording of frames */
-			frameDetectionStateFunc = (StateFunc)(*frameDetectionStateFunc)();
+			frameDetectionStateFunc = (func_ptr)(*frameDetectionStateFunc)();
             break;
         case TB0IV_TBCCR4: break;               // CCR4 not used
         case TB0IV_TBCCR5: break;               // CCR5 not used

@@ -68,47 +68,6 @@ void slow_timer_init() {
 }
 
 
-/**
-* @description  This interrupt handler handles interrupts from:
-*               TA1CCR1
-*               TA1CCR2
-*               TA1R (TAIFG)
-*
-* Note: INT_Timer1_A0 handles interrupts from TA2CCR0, dedicated interrupt
-----------------------------------------------------------------------------*/
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector = TIMER1_A1_VECTOR
-__interrupt void Timer1_A1_ISR(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
-#else
-#error Compiler not supported!
-#endif
-{
-    switch(__even_in_range(TA1IV, TA1IV_TAIFG)) {
-        case TA1IV_NONE:   break;               // No interrupt
-        case TA1IV_TACCR1:                      // CCR1 routine
-            TA1CCTL1 = 0x00;
-//TODO uncomment the following line when the mac sublayer is implemented
-//            preambleTimeout = true;
-            TA1CTL &= ~TAIFG;
-            break;
-        case TA1IV_TACCR2:                      // CCR2 routine (slow_timer_delay hendler)
-            TA1CCTL2 = 0x00;                    // Reset comparator settings
-            TA1CTL &= ~TAIFG;                   // Clear Interrupt Flag
-            __bic_SR_register_on_exit(LPM4_bits);
-            break;
-        case TA1IV_3:      break;               // reserved
-        case TA1IV_4:      break;               // reserved
-        case TA1IV_5:      break;               // reserved
-        case TA1IV_6:      break;               // reserved
-        case TA1IV_TAIFG:                       // overflow
-            TA1CTL &= ~TAIFG;
-            break;
-        default: break;
-    }
-}
-
 /** 
  * @description initialize timerA2
  ----------------------------------------------------------------------------*/
@@ -117,41 +76,6 @@ void fast_timer_init() {
               MC__CONTINUOUS |  // Use continuous running mode
               TACLR |           // Clear timer flag
               TAIE);            // Enable Timer_A interrupts
-}
-
-/**
-* @description  This interrupt handler handles interrupts from:
-*               TA2CCR1
-*               TA2CCR2
-*               TA2R (TAIFG)
-*
-* Note: INT_Timer2_A0 handles interrupts from TA2CCR0, dedicated interrupt
-----------------------------------------------------------------------------*/
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector = TIMER2_A1_VECTOR
-__interrupt void Timer2_A1_ISR(void)
-#elif defined(__GNUC__)
-void __attribute__ ((interrupt(TIMER2_A1_VECTOR))) Timer2_A1_ISR (void)
-#else
-#error Compiler not supported!
-#endif
-{
-    switch(__even_in_range(TA2IV, TA2IV_TAIFG)) {
-        case TA2IV_NONE:   break;               // No interrupt
-        case TA2IV_TACCR1:                      // CCR1 routine (fast_timer_delay handler)
-            TA2CTL &= ~TAIFG;
-            TA2CCTL1 = 0x00;                    // Reset comparator settings
-            __bic_SR_register_on_exit(LPM0_bits);  // #define LPM0_bits (CPUOFF)
-            break;
-        case TA2IV_3:      break;               // reserved
-        case TA2IV_4:      break;               // reserved
-        case TA2IV_5:      break;               // reserved
-        case TA2IV_6:      break;               // reserved
-        case TA2IV_TAIFG:                       // overflow
-            TA2CTL &= ~TAIFG;
-            break;
-        default: break;
-    }
 }
 
 

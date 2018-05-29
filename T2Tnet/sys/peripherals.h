@@ -1,7 +1,7 @@
 #ifndef PERIPHERALS_H_
 #define PERIPHERALS_H_
 
-#include "globals.h"
+#include <msp430fr5969.h>
 
 void gpio_init();
 void clock_init();

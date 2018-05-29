@@ -1,4 +1,4 @@
-#include "tx.h"
+#include "radio.h"
 
 bool phaseShift = false;
 uint8_t frame[FRAME_LENGTH] = {0};

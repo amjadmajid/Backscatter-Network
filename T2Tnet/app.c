@@ -1,7 +1,7 @@
 #include <msp430fr5969.h>
 #include <t2t.h>
 
-#define TX
+#define MAC 1
 
 void init()
 {
@@ -17,8 +17,14 @@ void init()
 int main(void) {
 
     init();
+    mac_init();
     uint8_t testFrame[] = {0x01, 0x02, 0x03,0x04};
-#ifdef TX       // Transmitter
+
+#if MAC
+
+    mac_fsm(preamble_sampling);
+
+#elif TX       // Transmitter
     while(1)
     {
         create_frame(0, 1, testFrame);

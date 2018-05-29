@@ -1,7 +1,13 @@
 #include <phy/radio.h>
 
+void radio_init()
+{
+    radio_enable();
+    rf_sw_init();
+}
+
 /** 
- * @description     Enable the transceiver
+ * @description     Enable the transceiver (set P4.3)
  ----------------------------------------------------------------------------*/
 void radio_enable()
 {
@@ -19,6 +25,9 @@ void radio_disable()
 
 /** 
  * @description     set the direction pins for the RF switch (A1, A0) 
+ *                  (1,1) => matching circuit (receiving)
+ *                  (1,0) => mismatching circuit (backscatter with phase-shift)
+ *                  (0,1) => mismatching cirtuit (backscatter)
  ----------------------------------------------------------------------------*/
 void rf_sw_init()
 {
@@ -26,11 +35,6 @@ void rf_sw_init()
     RFSW_DIR |= (A0 | A1);      //set the two pins as output
 }
 
-void radio_init()
-{
-    radio_enable();
-    rf_sw_init();
-}
 
 /**
  * @description     it causes the antenna matching circuit to be mismatched, to backscatter
@@ -51,9 +55,10 @@ void backscatter_state(bool phaseShift)
 /**
  * @description     it causes the antenna matching circuit to be matched, to receive the signal
  ----------------------------------------------------------------------------*/
-void recieve_state()
+void receive_state()
 {
     RFSW_DIR |= A0 | A1;
     RFSW_OUT |= A0 | A1;
+    rx_init();
 }
 

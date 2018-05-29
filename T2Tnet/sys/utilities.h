@@ -1,7 +1,8 @@
+#include <msp430fr5969.h>
+#include <stdint.h>
+
 #ifndef UTILITIES_H_
 #define UTILITIES_H_
-
-#include "globals.h"
 
 uint16_t calCRC(uint16_t checksum);
 

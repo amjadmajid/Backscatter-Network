@@ -8,7 +8,7 @@
 #ifndef PHY_RX_H_
 #define PHY_RX_H_
 
-#include "radio.h"
+#include "custom_data_type.h"
 
 /* Initialize receiver */
 void rx_init();
@@ -19,5 +19,7 @@ void stop_capture();
 void *detectFrameState();
 void *catchFrameState();
 
+
+bool channelBusy;
 
 #endif /* PHY_RX_H_ */
