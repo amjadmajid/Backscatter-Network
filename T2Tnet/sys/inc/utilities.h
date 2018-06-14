@@ -1,5 +1,3 @@
-#include <msp430fr5969.h>
-#include <stdint.h>
 
 #ifndef UTILITIES_H_
 #define UTILITIES_H_

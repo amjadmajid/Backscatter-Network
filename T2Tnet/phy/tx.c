@@ -1,4 +1,5 @@
-#include "radio.h"
+#include "sys.h"
+#include "phy.h"
 
 bool phaseShift = false;
 uint8_t frame[FRAME_LENGTH] = {0};
@@ -36,6 +37,8 @@ void create_frame(uint8_t receiverId, MessageType messageType, uint8_t *payloadP
     //  frame [byte 0| byte 1 ....| high CRC byte: low CRC byte  ]
     frame[FRAME_LENGTH - CRC_LENGTH] = resultCRC >> 8;
     frame[FRAME_LENGTH - CRC_LENGTH + 1] = resultCRC;
+
+    rbuf_write(&tx_buf, &frame[0], FRAME_LENGTH);
 }
 
 
@@ -95,39 +98,48 @@ void __backscatter_byte(uint8_t byte)
     }
 }
 
+#ifdef DEBUG
+uint8_t frameTx[FRAME_LENGTH];
+#endif
+
 /**
  * @description this function backscatters a frame
  ----------------------------------------------------------------------------*/
 void backscatter_frame()
 {
-		phaseShift=false;
-		// transmission of non-phase shifted frame 
-		backscatter_state(phaseShift);
-        uint8_t i ;
-        // Transmit preamble
-        for(i = 0; i < PREAMBLE_LENGTH; i++){
-            __backscatter_byte(PREAMBLE_BYTE);
-            __no_operation();
-        }
-        // Transmit payload
-        for(i = 0; i < FRAME_LENGTH; i++){
-            __backscatter_byte( frame[i] );
-        }
+#ifndef DEBUG
+    uint8_t frameTx[FRAME_LENGTH];
+#endif
+    rbuf_read(frameTx, &tx_buf, FRAME_LENGTH);
 
-        fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+    phaseShift=false;
+    // transmission of non-phase shifted frame 
+    backscatter_state(phaseShift);
+    uint8_t i ;
+    // Transmit preamble
+    for(i = 0; i < PREAMBLE_LENGTH; i++){
+        __backscatter_byte(PREAMBLE_BYTE);
+        __no_operation();
+     }
+     // Transmit payload
+     for(i = 0; i < FRAME_LENGTH; i++){
+        __backscatter_byte( frameTx[i] );
+     }
 
-        phaseShift = true;
-		// transmission of phase shifted frame 
-        for(i = 0; i < PREAMBLE_LENGTH; i++){
-            __backscatter_byte(PREAMBLE_BYTE);
-        }
-        for(i = 0; i < FRAME_LENGTH; i++){
-            __backscatter_byte( frame[i] );
-        }
+     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 
-        backscatter_state(phaseShift);
-        phaseShift = false;
-        fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+     phaseShift = true;
+    // transmission of phase shifted frame 
+    for(i = 0; i < PREAMBLE_LENGTH; i++){
+        __backscatter_byte(PREAMBLE_BYTE);
+     }
+    for(i = 0; i < FRAME_LENGTH; i++){
+        __backscatter_byte( frameTx[i] );
+     }
+
+    backscatter_state(phaseShift);
+    phaseShift = false;
+    fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 }
 
 

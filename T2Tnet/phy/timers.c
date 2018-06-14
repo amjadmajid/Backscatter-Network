@@ -1,4 +1,5 @@
-#include "radio.h"
+#include "sys.h"
+#include "phy.h"
 
 void timers_init()
 {
@@ -96,14 +97,7 @@ void slow_timer_delay(uint16_t ticks)
 *
 * Note: INT_Timer1_A0 handles interrupts from TA2CCR0, dedicated interrupt
 ----------------------------------------------------------------------------*/
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector = TIMER1_A1_VECTOR
-__interrupt void Timer1_A1_ISR(void)
-#elif defined(__GNUC__)
 void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
-#else
-#error Compiler not supported!
-#endif
 {
     switch(__even_in_range(TA1IV, TA1IV_TAIFG)) {
         case TA1IV_NONE:   break;               // No interrupt
@@ -116,7 +110,7 @@ void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
         case TA1IV_TACCR2:                      // CCR2 routine (slow_timer_delay hendler)
             TA1CCTL2 = 0x00;                    // Reset comparator settings
             TA1CTL &= ~TAIFG;                   // Clear Interrupt Flag
-            __bic_SR_register_on_exit(LPM4_bits);
+            __bic_SR_register_on_exit(LPM0_bits);
             break;
         case TA1IV_3:      break;               // reserved
         case TA1IV_4:      break;               // reserved
@@ -155,14 +149,7 @@ void fast_timer_delay(uint16_t ticks)
 *
 * Note: INT_Timer2_A0 handles interrupts from TA2CCR0, dedicated interrupt
 ----------------------------------------------------------------------------*/
-#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
-#pragma vector = TIMER2_A1_VECTOR
-__interrupt void Timer2_A1_ISR(void)
-#elif defined(__GNUC__)
 void __attribute__ ((interrupt(TIMER2_A1_VECTOR))) Timer2_A1_ISR (void)
-#else
-#error Compiler not supported!
-#endif
 {
     switch(__even_in_range(TA2IV, TA2IV_TAIFG)) {
         case TA2IV_NONE:   break;               // No interrupt

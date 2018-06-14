@@ -5,13 +5,12 @@
  *      Author: michel
  */
 
+
 #ifndef PHY_RX_H_
 #define PHY_RX_H_
 
-#include "custom_data_type.h"
-
 /* Initialize receiver */
-void rx_init();
+void rx_line_init();
 
 /* Enable or disable interrupt capability of receiver */
 void start_capture();

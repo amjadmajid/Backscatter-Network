@@ -5,10 +5,13 @@
  *      Author: amjad
  */
 
-#include <stdlib.h>
+
+#define DEBUG 1
 
 #ifndef SYS_CUSTOM_DATA_TYPE_H_
 #define SYS_CUSTOM_DATA_TYPE_H_
+
+#include <stdlib.h>
 
 /* Declare a data type that holds the characteristics of a ring buffer */
 typedef struct {

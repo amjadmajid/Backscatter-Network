@@ -1,6 +1,4 @@
-#include <utilities.h>
-
-const unsigned int CRC_Init = 0xFFFF;
+#include "sys.h"
 
 /**  
  * @description This function calculate the CRC.
@@ -9,7 +7,7 @@ const unsigned int CRC_Init = 0xFFFF;
 -----------------------------------------------------------------------------*/
 uint16_t calCRC(uint16_t checksum)
 {
-    CRCINIRES = CRC_Init;                     // Init CRC16 HW module
+    CRCINIRES = 0xffff;                     // Init CRC16 HW module
     CRCDIRB = checksum;                 // Input data in CRC
     __no_operation();
     uint16_t resultCRC = CRCINIRES;

@@ -1,5 +1,6 @@
+#include "sys.h"
+#include "phy.h"
 #include "mac.h"
-#include <stdbool.h>
 
 /*
 Mac steps:
@@ -37,16 +38,32 @@ void mac_init()
     // initialize the buffers
     rbuf_init(&tx_buf, TX_BUFFER_SIZE);
     rbuf_init(&rx_buf, RX_BUFFER_SIZE);
+    // initialize a buffer to save the valid data
+    rbuf_init(&rx_data_buf, RX_BUFFER_SIZE);
 
 }
 
-
+uint8_t end_mac_flag = false;
  void mac_fsm(func_ptr mac_func)
 {
     while(1)
     {
+        // go through mac fsm  until you reach a transmit state
+        // upon entering a transmit state set end_mac_flag
+        // After leaving the transmit state break the mac fsm
+        // do computation and restart the mac fsm
+        if(mac_func == transmit)
+            {
+                end_mac_flag = true;
+            }
+        
         mac_func = (func_ptr) (*mac_func)();
-         __delay_cycles(1000);
+        
+        if(end_mac_flag)
+            {
+                end_mac_flag = false;
+                break;
+            }
     }
 }
 
@@ -80,13 +97,25 @@ void* receive()
     receive_state();
     start_capture(); 
 
-    while( macRxTimeout != 0 );   //TODO Process the received packet instead of dummy delay
+    while( macRxTimeout == 0 )
+    {
+    }
 
+//TODO for now disable the reception while validating
+    stop_capture();
+    while(! rbuf_empty(&rx_buf))
+    {
+        frame_validation = 0;
+        frameValidation(waitFrameState);
+    }
+//    stop_capture();
     return preamble_sampling;
 }
 
 void* transmit()
 {
+    // disable capturing
+    stop_capture();
     //check if the transmit buffer is not empty
     if( !rbuf_empty(&tx_buf) )
     {
@@ -95,3 +124,45 @@ void* transmit()
     }
     return preamble_sampling;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

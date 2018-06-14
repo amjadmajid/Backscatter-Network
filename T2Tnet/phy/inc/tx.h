@@ -1,8 +1,6 @@
+
 #ifndef TX_H_
 #define TX_H_
-
-#include "radio.h"
-#include "custom_data_type.h"
 
 void backscatter(bool phaseShift);
 void __backscatter_1();

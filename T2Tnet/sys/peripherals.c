@@ -1,4 +1,4 @@
-#include "peripherals.h"
+#include "sys.h"
 
 /****************************************************************************
   *                     GPIOs general initialization

@@ -5,7 +5,8 @@
  *      Author: michel
  */
 
-#include "radio.h"
+#include "sys.h"
+#include "phy.h"
 
 /* Variables used for bit decoding in ISR */
 func_ptr frameDetectionStateFunc;
@@ -13,7 +14,7 @@ volatile uint8_t bitCounter, byteCounter, decodedBits;
 volatile uint16_t timeCapture;
 volatile bool potentialZero, recordFrame;
 
-void rx_init(){
+void rx_line_init(){
 	/* Configure RX port to use as input for TB0 Timer CCR3 */
     RX_DIR &= ~RX_PIN;                          // configure RX port as an input port
     RX_FUNC_SEL |= RX_PIN;                      // P1.6 options select (primary module function= TB0 CCR3)
@@ -67,8 +68,11 @@ void *catchFrameState(){
 		decodedBits = 0;
 	}
 	if(byteCounter == FRAME_LENGTH){
+        //disable reception
+        stop_capture();
 		byteCounter = 0;
-		rbuf_write(&rx_buf,FRAME_LENGTH, frame);
+		rbuf_write(&rx_buf, &frame, FRAME_LENGTH);
+		start_capture();
 		return detectFrameState;
 	}
 	return catchFrameState;

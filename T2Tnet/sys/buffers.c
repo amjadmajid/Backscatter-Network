@@ -1,4 +1,4 @@
-#include "buffers.h"
+#include "sys.h"
 /*
  * Ring_buffer: utilizes a fixed-size buffer 
  * The ring buffer is a FIFO type of buffer
@@ -10,10 +10,16 @@
  * Instead of using while and insert the frame byte by byte, use memcpy
 */
 
+#if DEBUG
+uint16_t buffer_debug;
+#endif
 
 void rbuf_init(rbuf_t *rbuf, uint8_t rbuf_size)
 {
-  rbuf = malloc(rbuf_size);
+  rbuf->buffer = malloc(rbuf_size);
+#if DEBUG
+  buffer_debug = (uint16_t) rbuf->buffer;
+#endif
   rbuf->size = rbuf_size;
   rbuf->head = 0;
   rbuf->tail = 0;
@@ -69,7 +75,7 @@ void rbuf_put( rbuf_t *rbuf, uint8_t data)
     // insert the data
     rbuf->buffer[rbuf->head] = data;
     // check if old data is overwritten
-    if(rbuf->head == rbuf->tail)
+    if( rbuf_full(rbuf))
     {
         // advances the tail index to point to the old data
         // buffer size equals (max index + 1) 
@@ -104,6 +110,10 @@ bool rbuf_get(rbuf_t * rbuf, uint8_t *data)
     return true;
 }
 
+#if DEBUG
+uint8_t data_debug;
+#endif
+
 
 /** rbuf_write:
  * write many bytes to the buffer
@@ -111,11 +121,43 @@ bool rbuf_get(rbuf_t * rbuf, uint8_t *data)
  * @param *rbuf     pointer to a ring buffer
  * @param data      a byte to be inserted in to the buffer
  */ 
-void rbuf_write( rbuf_t *rbuf, uint8_t numBytes, uint8_t *data)
+void rbuf_write( rbuf_t *rbuf, uint8_t *data, uint8_t numBytes)
 {
+#if DEBUG
+    data_debug = *data;
+#endif
+
     while(numBytes--)
     {
-        rbuf_put(rbuf, *data++);
+        rbuf_put(rbuf, *data);
+        data++;
     }
 }
+
+/** rbuf_read:
+ * read many bytes to the buffer
+ *
+ * @param *rbuf     pointer to a ring buffer
+ * @param data      a byte to be read from the buffer
+ */
+error_t rbuf_read( uint8_t *data, rbuf_t *rbuf, uint8_t numBytes)
+{
+    if(rbuf_empty(rbuf))
+       {
+        return E_BUFFER_EMPTY;
+       }
+
+    while( (numBytes--) && rbuf_get(rbuf, data))
+    {
+        data++;
+    }
+
+    return E_SUCCESS;
+}
+
+
+
+
+
+
 

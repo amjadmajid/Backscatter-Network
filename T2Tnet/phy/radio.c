@@ -1,15 +1,16 @@
-#include <phy/radio.h>
+#include "sys.h"
+#include "phy.h"
 
 void radio_init()
 {
-    radio_enable();
+    transceiver_enable();
     rf_sw_init();
 }
 
 /** 
  * @description     Enable the transceiver (set P4.3)
  ----------------------------------------------------------------------------*/
-void radio_enable()
+void transceiver_enable()
 {
     RADIO_DIR |= ON;            // set the transceiver enable bit to be output
     RADIO_OUT |= ON;            // enable the transceiver
@@ -18,7 +19,7 @@ void radio_enable()
 /** 
  * @description     disable the transceiver
  ----------------------------------------------------------------------------*/
-void radio_disable()
+void transceiver_disable()
 {
     RADIO_OUT &= ~ON;            // enable the transceiver
 }
@@ -57,8 +58,7 @@ void backscatter_state(bool phaseShift)
  ----------------------------------------------------------------------------*/
 void receive_state()
 {
-    RFSW_DIR |= A0 | A1;
     RFSW_OUT |= A0 | A1;
-    rx_init();
+   rx_line_init();
 }
 

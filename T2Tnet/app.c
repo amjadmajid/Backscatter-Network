@@ -1,7 +1,12 @@
 #include <msp430fr5969.h>
-#include <t2t.h>
+#include <net.h>
 
-#define MAC 1
+//#define TX_APP
+
+uint16_t received_frame_correct = 0;
+uint16_t received_frame_incorrect = 0;
+int16_t transmitted_frame = 100;
+
 
 void init()
 {
@@ -13,29 +18,35 @@ void init()
     timers_init();
     radio_init();
     _BIS_SR(GIE);
+
+#if DEBUG
+     P1DIR |= BIT0;
+#endif
 }
 int main(void) {
-
     init();
     mac_init();
-    uint8_t testFrame[] = {0x01, 0x02, 0x03,0x04};
+    uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
 
-#if MAC
+#ifdef TX_APP
+    while(trasmitted_frame--)
+    {
+        mac_fsm(preamble_sampling);
 
-    mac_fsm(preamble_sampling);
+        slow_timer_delay(2500);   // reduce the transmission rate (random guess)
+        //TODO transmit with a probability (use rand)
+        uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
+        create_frame(0, 1, testFrame);
+    }
 
-#elif TX       // Transmitter
+    while(1);
+#else
     while(1)
     {
-        create_frame(0, 1, testFrame);
-        backscatter_frame();
-        __delay_cycles(160000);
+        mac_fsm(preamble_sampling);
     }
-#else       // Receiver
-    rx_init();
-    recieve_state();
-    start_capture();
 #endif
+
     return 0;
 }
 
