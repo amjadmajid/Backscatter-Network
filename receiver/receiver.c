@@ -98,9 +98,9 @@ void *catchFrameState(){
     }
     if(byteCounter == FRAME_LENGTH){
         byteCounter = 0;
-//        P1OUT |= BIT0;    // set the LED pin
-//        __delay_cycles(160000);
-//        P1OUT &=~BIT0;    // CLear the LED pin
+        P1OUT |= BIT0;    // set the LED pin
+        __delay_cycles(160000);
+        P1OUT &=~BIT0;    // CLear the LED pin
         return detectFrameState;
     }
     return catchFrameState;

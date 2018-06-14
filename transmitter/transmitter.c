@@ -1,5 +1,6 @@
 
 #include "transmitter.h"
+#define DEBUG 1
 
 /*
  * Setup timerA2 for continuous mode operation (SMCLK = DCO speed)
@@ -137,6 +138,9 @@ void sendFrame(){
 
 }
 
+#if DEBUG
+    uint16_t checksum_debug;
+#endif
 
 void createFrame(uint8_t receiverId, MessageType messageType, uint8_t *payloadPtr){
     uint8_t i;
@@ -159,6 +163,11 @@ void createFrame(uint8_t receiverId, MessageType messageType, uint8_t *payloadPt
     for(i = 0; i < (FRAME_LENGTH - CRC_LENGTH); i++){
         checksum += frame[i];
     }
+
+#if DEBUG
+    checksum_debug = checksum;
+#endif
+
     resultCRC = calculateCRC(checksum);
     //  frame [byte 0| byte 1 ....| high CRC byte: low CRC byte  ]
     frame[FRAME_LENGTH - CRC_LENGTH] = resultCRC >> 8;
@@ -220,7 +229,7 @@ int main(void) {
     WDTCTL = WDTPW | WDTHOLD;	// Stop watchdog timer
     PM5CTL0 &= ~LOCKLPM5;
 
-    uint8_t testFrame[] = {0x89,0xab, 0xcd, 0xef};
+    uint8_t testFrame[] = {0x11,0x22, 0x33, 0x44};
 
     gpio_init();
     tx_init();
@@ -233,7 +242,7 @@ int main(void) {
         createFrame(0, 1, &testFrame);
         sendFrame();
 //        tx_off();
-             __delay_cycles(160000);
+             __delay_cycles(8000000);
 //        tx_on();
 //        __delay_cycles(1600000);
     }
