@@ -1,9 +1,12 @@
 #include <receiver.h>
 #include <stdbool.h>
 
+#define NUM_FRAME 50
+
 bool wrong_frame = false;
 const uint8_t frame_orig[11] = {0xaa, 0x04, 0x00, 0x01,0x00, 0x11, 0x22, 0x33, 0x44, 0xb9, 0x09};
-uint16_t frame_error_dis[11] = {0};
+uint8_t  frame_error_dis[11] = {0};
+uint16_t error_per_frame[NUM_FRAME] = {0};
 uint16_t frame_cntr = 0;
 
 void recieve_state();
@@ -107,7 +110,7 @@ void *catchFrameState(){
     if(byteCounter == FRAME_LENGTH){
 
         frame_cntr++;
-        if(frame_cntr >= 100)
+        if(frame_cntr >= NUM_FRAME)
         {
             while(1);
         }
@@ -119,14 +122,19 @@ void *catchFrameState(){
 
         //basic fixed frame checking
         uint16_t chk_var;
-        for(chk_var =0; chk_var < FRAME_LENGTH; chk_var++)
+        uint16_t num_err_frame=0;
+        for(chk_var = 0; chk_var < FRAME_LENGTH; chk_var++)
         {
             if(frame[chk_var] != frame_orig[chk_var])
             {
                 wrong_frame = true;
                 frame_error_dis[chk_var]++;
+                num_err_frame++;
             }
         }
+
+        error_per_frame[frame_cntr] =  num_err_frame;
+        num_err_frame=0;
 
         if(!wrong_frame)
         {

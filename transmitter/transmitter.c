@@ -1,6 +1,7 @@
 
 #include "transmitter.h"
 #define DEBUG 1
+#define NUM_FRAME 50
 
 uint16_t frame_cntr = 0;
 /*
@@ -237,13 +238,13 @@ int main(void) {
     clock_init();
     timerA2_init();
 
-    while(frame_cntr < 100)
+    while(frame_cntr < NUM_FRAME)
     {
 //        send_byte(0xaa);
         createFrame(0, 1, &testFrame);
         sendFrame();
 //        tx_off();
-             __delay_cycles(8000000);
+             __delay_cycles(4000000);
 //        tx_on();
 //        __delay_cycles(1600000);
              frame_cntr++;
