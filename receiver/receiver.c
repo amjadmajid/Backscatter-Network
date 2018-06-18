@@ -1,4 +1,10 @@
 #include <receiver.h>
+#include <stdbool.h>
+
+bool wrong_frame = false;
+const uint8_t frame_orig[11] = {0xaa, 0x04, 0x00, 0x01,0x00, 0x11, 0x22, 0x33, 0x44, 0xb9, 0x09};
+uint16_t frame_error_dis[11] = {0};
+uint16_t frame_cntr = 0;
 
 void recieve_state();
 void *detectFrameState();
@@ -90,17 +96,47 @@ void *detectFrameState(){
 }
 
 void *catchFrameState(){
+
     if(bitCounter == 8){
         bitCounter = 0;
         frame[byteCounter] = decodedBits;
         byteCounter++;
         decodedBits = 0;
     }
+
     if(byteCounter == FRAME_LENGTH){
+
+        frame_cntr++;
+        if(frame_cntr >= 100)
+        {
+            while(1);
+        }
+
         byteCounter = 0;
         P1OUT |= BIT0;    // set the LED pin
         __delay_cycles(160000);
         P1OUT &=~BIT0;    // CLear the LED pin
+
+        //basic fixed frame checking
+        uint16_t chk_var;
+        for(chk_var =0; chk_var < FRAME_LENGTH; chk_var++)
+        {
+            if(frame[chk_var] != frame_orig[chk_var])
+            {
+                wrong_frame = true;
+                frame_error_dis[chk_var]++;
+            }
+        }
+
+        if(!wrong_frame)
+        {
+            //blink_red_led
+            P4OUT |= BIT6;    // set the LED pin
+            __delay_cycles(160000);
+            P4OUT &=~BIT6;    // CLear the LED pin
+        }
+        wrong_frame = false;
+
         return detectFrameState;
     }
     return catchFrameState;

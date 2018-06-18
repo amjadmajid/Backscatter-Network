@@ -2,6 +2,7 @@
 #include "transmitter.h"
 #define DEBUG 1
 
+uint16_t frame_cntr = 0;
 /*
  * Setup timerA2 for continuous mode operation (SMCLK = DCO speed)
  */
@@ -236,7 +237,7 @@ int main(void) {
     clock_init();
     timerA2_init();
 
-    while(1)
+    while(frame_cntr < 100)
     {
 //        send_byte(0xaa);
         createFrame(0, 1, &testFrame);
@@ -245,7 +246,10 @@ int main(void) {
              __delay_cycles(8000000);
 //        tx_on();
 //        __delay_cycles(1600000);
+             frame_cntr++;
     }
+
+    while(1);
 	
 	return 0;
 }
