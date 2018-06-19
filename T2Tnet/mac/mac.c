@@ -77,6 +77,7 @@ void channel_assessment()
 
 void* preamble_sampling()
 {
+    transceiver_enable();
 	//uint16_t randomCsmaTime = rand() % MAC_EXTRA_CSMA_MAX_ACLK;
     // preamble sampling
     channel_assessment();
@@ -87,21 +88,26 @@ void* preamble_sampling()
         channelBusy = false;
         return receive;
     }
+    transceiver_disable();
     return transmit;
 }
 
 
 void* receive()
 {
-    startMacRxDownCounter((uint16_t) MAC_RX_TIMEOUT_ACLK);
+    startMacDownCounter((uint16_t) MAC_RX_TIMEOUT_ACLK);
     receive_state();
     start_capture(); 
+    uint16_t prev_data_len = rbuf_data_len(&rx_data_buf);
 
-    while( macRxTimeout == 0 )
+    // this while loop must be broken on a frame reception or on a timeout
+    while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (macTimeout == 0) )
     {
+        frame_validation = 0;
+        frameValidation(waitFrameState);
     }
 
-//TODO for now disable the reception while validating
+// Process anything left
     stop_capture();
     while(! rbuf_empty(&rx_buf))
     {

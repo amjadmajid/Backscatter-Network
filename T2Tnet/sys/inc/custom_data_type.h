@@ -6,8 +6,6 @@
  */
 
 
-#define DEBUG 1
-
 #ifndef SYS_CUSTOM_DATA_TYPE_H_
 #define SYS_CUSTOM_DATA_TYPE_H_
 

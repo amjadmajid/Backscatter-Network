@@ -58,7 +58,12 @@ void *checkCRCState(){
         return savePayloadState;
     } else{
         frame_validation = 1;
-        received_frame_correct++;
+#if DEBUG
+        received_frame_incorrect++;
+        P4OUT |= BIT6;    // set the LED pin
+        __delay_cycles(160000);
+        P4OUT &=~BIT6;    // CLear the LED pin
+#endif
         return waitFrameState;
     }
 }
@@ -93,9 +98,9 @@ void *savePayloadState(){
             rbuf_write( &rx_data_buf, &frameRx[PAYLOAD] , PAYLOAD_LENGTH);
 #if DEBUG
             received_frame_correct++;
-//            P1OUT |= BIT0;    // set the LED pin
-//            __delay_cycles(160000);
-//            P1OUT &=~BIT0;    // CLear the LED pin
+            P1OUT |= BIT0;    // set the LED pin
+            __delay_cycles(160000);
+            P1OUT &=~BIT0;    // CLear the LED pin
 #endif
 
 //        } else{

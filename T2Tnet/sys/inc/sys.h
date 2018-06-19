@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+
+#include "debug.h"
 #include "custom_data_type.h"
 #include "peripherals.h"
 #include "buffers.h"

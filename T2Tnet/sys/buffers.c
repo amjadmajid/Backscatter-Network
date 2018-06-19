@@ -53,6 +53,17 @@ bool rbuf_empty(rbuf_t* rbuf)
     return (rbuf->data_len == 0); 
 }
 
+/** rbuf_data_len:
+ * return the number of occupied bytes in a buffer
+ *
+ * @param   *rbuf   pointer to a ring buffer
+ * @return  integer value represent the number of occupied bytes in a buffer
+ */
+uint16_t rbuf_data_len(rbuf_t* rbuf)
+{
+    return rbuf->data_len;
+}
+
 /** rbuf_full:
  * check if the ring buffer is full
  *

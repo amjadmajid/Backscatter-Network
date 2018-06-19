@@ -34,6 +34,10 @@
 
 bool channelBusy;
 
+#define LONG_PREAMBLE 1
+#define SLEEP_PERIOD_ACLK                10000
+#define LONG_PREAMBLE_INTERVAL           2*SLEEP_PERIOD_ACLK
+
 /* Buffers to store incoming and outgoing frames */
 rbuf_t tx_buf;
 rbuf_t rx_buf;

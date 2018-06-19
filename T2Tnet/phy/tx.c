@@ -98,6 +98,16 @@ void __backscatter_byte(uint8_t byte)
     }
 }
 
+void __backscatter_frame(uint8_t * frame, bool phaseShift)
+{
+    uint8_t i;
+  for(i = 0; i < FRAME_LENGTH; i++){
+       __backscatter_byte( frame[i] );
+    }
+  // to finish the last bit
+  backscatter(phaseShift);
+}
+
 #ifdef DEBUG
 uint8_t frameTx[FRAME_LENGTH];
 #endif
@@ -114,17 +124,24 @@ void backscatter_frame()
 
     phaseShift=false;
     // transmission of non-phase shifted frame 
-    backscatter_state(phaseShift);
+//    backscatter_state(phaseShift);
     uint8_t i ;
     // Transmit preamble
+    //if long preamble transmission is required
+#if LONG_PREAMBLE
+    startMacDownCounter(LONG_PREAMBLE_INTERVAL);
+    while(!macTimeout)
+    {
+        __backscatter_byte(PREAMBLE_BYTE);
+    }
+#else
     for(i = 0; i < PREAMBLE_LENGTH; i++){
         __backscatter_byte(PREAMBLE_BYTE);
         __no_operation();
      }
-     // Transmit payload
-     for(i = 0; i < FRAME_LENGTH; i++){
-        __backscatter_byte( frameTx[i] );
-     }
+#endif
+
+    __backscatter_frame(frameTx, phaseShift);
 
      fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 
@@ -133,11 +150,10 @@ void backscatter_frame()
     for(i = 0; i < PREAMBLE_LENGTH; i++){
         __backscatter_byte(PREAMBLE_BYTE);
      }
-    for(i = 0; i < FRAME_LENGTH; i++){
-        __backscatter_byte( frameTx[i] );
-     }
 
-    backscatter_state(phaseShift);
+    __backscatter_frame(frameTx, phaseShift);
+
+//    backscatter_state(phaseShift);
     phaseShift = false;
     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 }

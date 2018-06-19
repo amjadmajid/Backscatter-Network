@@ -1,12 +1,12 @@
 #include <msp430fr5969.h>
+#include <stdlib.h>
+#include <time.h>
 #include <net.h>
 
-//#define TX_APP
+#define TX_APP
 
-uint16_t received_frame_correct = 0;
-uint16_t received_frame_incorrect = 0;
-int16_t transmitted_frame = 100;
-
+uint16_t transmitted_frame = 100;
+uint16_t dummy_debug;
 
 void init()
 {
@@ -19,6 +19,8 @@ void init()
     radio_init();
     _BIS_SR(GIE);
 
+    srand((unsigned) 2 );
+
 #if DEBUG
      P1DIR |= BIT0;
 #endif
@@ -26,27 +28,21 @@ void init()
 int main(void) {
     init();
     mac_init();
-    uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
+    const uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
 
-#ifdef TX_APP
-    while(trasmitted_frame--)
-    {
-        mac_fsm(preamble_sampling);
-
-        slow_timer_delay(2500);   // reduce the transmission rate (random guess)
-        //TODO transmit with a probability (use rand)
-        uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
-        create_frame(0, 1, testFrame);
-    }
-
-    while(1);
-#else
     while(1)
     {
         mac_fsm(preamble_sampling);
-    }
+#ifdef TX_APP
+        slow_timer_delay(10000);   // reduce the transmission rate (random guess)
+        //TODO transmit with a probability (use rand)
+        dummy_debug = rand();
+        if( dummy_debug % 2 )
+        {
+            create_frame(0, 1, testFrame);
+        }
 #endif
-
+    }
     return 0;
 }
 

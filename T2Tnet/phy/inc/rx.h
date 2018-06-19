@@ -18,7 +18,4 @@ void stop_capture();
 void *detectFrameState();
 void *catchFrameState();
 
-
-bool channelBusy;
-
 #endif /* PHY_RX_H_ */

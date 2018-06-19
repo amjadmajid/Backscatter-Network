@@ -45,9 +45,9 @@ uint16_t read_TA1()
     return t1;
 }
 
-void startMacRxDownCounter(uint16_t cycles)
+void startMacDownCounter(uint16_t cycles)
 {
-    macRxTimeout = 0;
+    macTimeout = false;
     TA1CCR0 = read_TA1() + cycles;
     TA1CCTL0 = CCIE;     // Enable Interrupts on Comparator register
 }
@@ -55,7 +55,7 @@ void startMacRxDownCounter(uint16_t cycles)
 // Timer1 A0 interrupt service routine
 void __attribute__ ((interrupt(TIMER1_A0_VECTOR))) Timer1_A0_ISR (void)
 {
-    macRxTimeout = 1;
+    macTimeout = true;
     TA1CCTL0 = 0x00;
     stop_capture();
 }

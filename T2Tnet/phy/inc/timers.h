@@ -14,9 +14,9 @@ uint16_t read_TA1();
 void slow_timer_delay(uint16_t ticks);
 void start_preamble_timer(uint16_t cycles);
 void fast_timer_delay(uint16_t ticks);
-void startMacRxDownCounter(uint16_t cycles);
+void startMacDownCounter(uint16_t cycles);
 
 
-volatile uint16_t macRxTimeout;
+volatile bool macTimeout;
 
 #endif /* PHY_TIMERS_H_ */

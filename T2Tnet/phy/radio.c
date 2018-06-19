@@ -58,7 +58,7 @@ void backscatter_state(bool phaseShift)
  ----------------------------------------------------------------------------*/
 void receive_state()
 {
-    RFSW_OUT |= A0 | A1;
+   RFSW_OUT |= A0 | A1;
    rx_line_init();
 }
 
