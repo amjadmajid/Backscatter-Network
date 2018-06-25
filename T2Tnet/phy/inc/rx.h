@@ -5,6 +5,10 @@
  *      Author: michel
  */
 
+#include "frame.h"
+#include "buffers.h"
+#include "radio.h"
+#include "timers.h"
 
 #ifndef PHY_RX_H_
 #define PHY_RX_H_
@@ -15,7 +19,7 @@ void rx_line_init();
 /* Enable or disable interrupt capability of receiver */
 void start_capture();
 void stop_capture();
-void *detectFrameState();
-void *catchFrameState();
+
+rbuf_t rx_buf;
 
 #endif /* PHY_RX_H_ */

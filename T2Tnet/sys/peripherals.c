@@ -1,4 +1,18 @@
-#include "sys.h"
+#include "peripherals.h"
+
+/**
+ * @description This function calculate the CRC.
+ * @param       checksum a value to calculate the CRC for it.
+ * @return      It returns the CRC value
+-----------------------------------------------------------------------------*/
+uint16_t calCRC(uint16_t checksum)
+{
+    CRCINIRES = 0xffff;                     // Init CRC16 HW module
+    CRCDIRB = checksum;                 // Input data in CRC
+    __no_operation();
+    uint16_t resultCRC = CRCINIRES;
+    return resultCRC;
+}
 
 /****************************************************************************
   *                     GPIOs general initialization
@@ -78,7 +92,6 @@ void fast_timer_init() {
               TAIE);            // Enable Timer_A interrupts
 }
 
-
 /**
  * @description initialize timerB0: Setup TimerB0 for PWM signal to be used to
  *              control the backscatter switch(transmitter) at SMCLK speed
@@ -87,6 +100,13 @@ void fast_timer_init() {
  ----------------------------------------------------------------------------*/
 void decode_timer_init() {
     TB0CTL = TBSSEL__SMCLK | MC__UP | TBCLR;    // SMCLK, up mode, clear TBR
+}
+
+void timers_init()
+{
+    slow_timer_init();
+    fast_timer_init();
+    decode_timer_init();
 }
 
 

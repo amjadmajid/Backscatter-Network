@@ -1,6 +1,9 @@
-#include "sys.h"
-#include "phy.h"
 #include "mac.h"
+
+// Private functions prototype
+static void channel_assessment();
+static void* receive();
+static void* transmit();
 
 /*
 Mac steps:
@@ -67,7 +70,7 @@ uint8_t end_mac_flag = false;
     }
 }
 
-void channel_assessment()
+static void channel_assessment()
 {
     receive_state();
     start_capture(); 
@@ -93,17 +96,16 @@ void* preamble_sampling()
 }
 
 
-void* receive()
+static void* receive()
 {
-    startMacDownCounter((uint16_t) MAC_RX_TIMEOUT_ACLK);
+    mac_down_cntr((uint16_t) MAC_RX_TIMEOUT_ACLK);
     receive_state();
     start_capture(); 
     uint16_t prev_data_len = rbuf_data_len(&rx_data_buf);
 
     // this while loop must be broken on a frame reception or on a timeout
-    while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (macTimeout == 0) )
+    while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (macTimeout == false) )
     {
-        frame_validation = 0;
         frameValidation(waitFrameState);
     }
 
@@ -111,14 +113,13 @@ void* receive()
     stop_capture();
     while(! rbuf_empty(&rx_buf))
     {
-        frame_validation = 0;
         frameValidation(waitFrameState);
     }
 //    stop_capture();
     return preamble_sampling;
 }
 
-void* transmit()
+static void* transmit()
 {
     // disable capturing
     stop_capture();

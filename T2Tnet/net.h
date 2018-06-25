@@ -8,8 +8,6 @@
 #ifndef NET_H_
 #define NET_H_
 
-#include "sys.h"
-#include "phy.h"
 #include "mac.h"
 
 #endif /* NET_H_ */

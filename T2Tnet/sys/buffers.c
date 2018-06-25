@@ -1,4 +1,5 @@
-#include "sys.h"
+#include "buffers.h"
+
 /*
  * Ring_buffer: utilizes a fixed-size buffer 
  * The ring buffer is a FIFO type of buffer
@@ -13,6 +14,13 @@
 #if DEBUG
 uint16_t buffer_debug;
 #endif
+
+// Private functions prototypes
+bool rbuf_full(rbuf_t *rbuf);
+void rbuf_put( rbuf_t *rbuf, uint8_t data);
+void _advance_idx(size_t *idx, size_t *size);
+
+
 
 void rbuf_init(rbuf_t *rbuf, uint8_t rbuf_size)
 {

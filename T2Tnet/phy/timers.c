@@ -1,12 +1,6 @@
-#include "sys.h"
-#include "phy.h"
-
-void timers_init()
-{
-    slow_timer_init();
-    fast_timer_init();
-    decode_timer_init();
-}
+#include "timers.h"
+// timers module private function prototypes
+static uint16_t read_TA1();
 
 /*******************************************************************************
  * Timer functions
@@ -15,8 +9,8 @@ void timers_init()
 /* Timers overview:
  * TA0: (Available)
  * TA1: ACLK - Continuous
- *          CCR0: MAC: For RX timeout
- *          CCR1: PHY: Preamble duration during TX
+ *          CCR0: MAC: For RX/TX timeout
+ *          CCR1: (Available)
  *          CCR2: Used by slow_timer_delay()
  * TA2: SMCLK - Continuous
  *          CCR0: (Available)
@@ -35,7 +29,7 @@ void timers_init()
 /**
  * @description read timerA1, without stopping it, using majority vote technique
  *----------------------------------------------------------------------------*/
-uint16_t read_TA1()
+static uint16_t read_TA1()
 {
     uint16_t t1,t2;
     do{
@@ -45,7 +39,12 @@ uint16_t read_TA1()
     return t1;
 }
 
-void startMacDownCounter(uint16_t cycles)
+/**
+ * @description This function provide a delay service using TimerA1 and
+                 capture/compare channel 0.
+ * @param       It expects the length of the delay in ACLK cycles
+-----------------------------------------------------------------------------*/
+void mac_down_cntr(uint16_t cycles)
 {
     macTimeout = false;
     TA1CCR0 = read_TA1() + cycles;
@@ -57,21 +56,6 @@ void __attribute__ ((interrupt(TIMER1_A0_VECTOR))) Timer1_A0_ISR (void)
 {
     macTimeout = true;
     TA1CCTL0 = 0x00;
-    stop_capture();
-}
-
-/**
- * @description This function provide a delay service using TimerA1 and
-                 capture/compare channel 1.
- * @param       It expects the length of the delay in ACLK cycles
------------------------------------------------------------------------------*/
-void start_preamble_timer(uint16_t cycles)
-{
-    //TODO uncomment the following line when mac sublayer implementation is done
-//    preambleTimeout = false;
-    TA1CTL |= TACLR;
-    TA1CCR1 = read_TA1() + cycles;
-    TA1CCTL1 = CCIE;     // Enable Interrupts on Comparator register
 }
 
 /**
@@ -102,20 +86,12 @@ void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
     switch(__even_in_range(TA1IV, TA1IV_TAIFG)) {
         case TA1IV_NONE:   break;               // No interrupt
         case TA1IV_TACCR1:                      // CCR1 routine
-            TA1CCTL1 = 0x00;
-//TODO uncomment the following line when the mac sublayer is implemented
-//            preambleTimeout = true;
-            TA1CTL &= ~TAIFG;
             break;
         case TA1IV_TACCR2:                      // CCR2 routine (slow_timer_delay hendler)
             TA1CCTL2 = 0x00;                    // Reset comparator settings
             TA1CTL &= ~TAIFG;                   // Clear Interrupt Flag
             __bic_SR_register_on_exit(LPM0_bits);
             break;
-        case TA1IV_3:      break;               // reserved
-        case TA1IV_4:      break;               // reserved
-        case TA1IV_5:      break;               // reserved
-        case TA1IV_6:      break;               // reserved
         case TA1IV_TAIFG:                       // overflow
             TA1CTL &= ~TAIFG;
             break;
@@ -158,10 +134,6 @@ void __attribute__ ((interrupt(TIMER2_A1_VECTOR))) Timer2_A1_ISR (void)
             TA2CCTL1 = 0x00;                    // Reset comparator settings
             __bic_SR_register_on_exit(LPM0_bits);  // #define LPM0_bits (CPUOFF)
             break;
-        case TA2IV_3:      break;               // reserved
-        case TA2IV_4:      break;               // reserved
-        case TA2IV_5:      break;               // reserved
-        case TA2IV_6:      break;               // reserved
         case TA2IV_TAIFG:                       // overflow
             TA2CTL &= ~TAIFG;
             break;

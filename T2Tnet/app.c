@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <net.h>
+#include "debug.h"
+
 
 #define TX_APP
 
@@ -22,24 +24,30 @@ void init()
     srand((unsigned) 2 );
 
 #if DEBUG
-     P1DIR |= BIT0;
+    leds_init();
 #endif
+
 }
 int main(void) {
     init();
     mac_init();
-    const uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
+    uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
 
     while(1)
     {
         mac_fsm(preamble_sampling);
 #ifdef TX_APP
-        slow_timer_delay(10000);   // reduce the transmission rate (random guess)
+        slow_timer_delay(1000);    // reduce the transmission rate (random guess)
         //TODO transmit with a probability (use rand)
         dummy_debug = rand();
-        if( dummy_debug % 2 )
+        if( (dummy_debug % 4) == 0 )
         {
-            create_frame(0, 1, testFrame);
+            set_node_id(2);
+            set_frame_type(0);
+            set_frame_receiver_id(1);
+            set_frame_sender_id( 3 );
+            set_ttl(10);
+            create_frame( &testFrame[0], &tx_buf);
         }
 #endif
     }

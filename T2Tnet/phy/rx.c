@@ -5,14 +5,18 @@
  *      Author: michel
  */
 
-#include "sys.h"
-#include "phy.h"
+#include "rx.h"
+
+// Private functions prototype
+void *detectFrameState();
+void *catchFrameState();
 
 /* Variables used for bit decoding in ISR */
-func_ptr frameDetectionStateFunc;
+func_ptr frameDetect_fsm;
 volatile uint8_t bitCounter, byteCounter, decodedBits;
+volatile bool potentialZero;
 volatile uint16_t timeCapture;
-volatile bool potentialZero, recordFrame;
+volatile uint8_t frame[FRAME_LENGTH] = {0};
 
 void rx_line_init(){
 	/* Configure RX port to use as input for TB0 Timer CCR3 */
@@ -20,7 +24,7 @@ void rx_line_init(){
     RX_FUNC_SEL |= RX_PIN;                      // P1.6 options select (primary module function= TB0 CCR3)
 
 	/* Initialize state pointer for frame detection and recording */
-    frameDetectionStateFunc = (func_ptr) detectFrameState;
+    frameDetect_fsm = (func_ptr) detectFrameState;
 
     /* Initialize variables for RX decoding */
 	decodedBits = 0;
@@ -93,7 +97,9 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
         case TB0IV_TBCCR2: break;               // CCR2 not used
         case TB0IV_TBCCR3: /* Decode bits algorithm */
         	/* Save captured timer value and reset timer */
-        	timeCapture = TB0CCR3;
+            //TODO use majority voting to have a more accurate timer readings
+
+            timeCapture = TB0CCR3;
 			TB0CTL |= TBCLR;
 
 			/* Check if time corresponds to a valid zero (= BIT_LENGTH/2) */
@@ -117,7 +123,7 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
 			}
 
 			/* Detection and recording of frames */
-			frameDetectionStateFunc = (func_ptr)(*frameDetectionStateFunc)();
+			frameDetect_fsm = (func_ptr)(*frameDetect_fsm)();
             break;
         case TB0IV_TBCCR4: break;               // CCR4 not used
         case TB0IV_TBCCR5: break;               // CCR5 not used

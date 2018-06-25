@@ -1,5 +1,7 @@
-#include "sys.h"
-#include "phy.h"
+#include "radio.h"
+
+// Private function prototype
+void rf_sw_init();
 
 void radio_init()
 {

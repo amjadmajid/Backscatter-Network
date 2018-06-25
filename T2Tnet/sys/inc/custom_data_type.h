@@ -5,11 +5,13 @@
  *      Author: amjad
  */
 
+#include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #ifndef SYS_CUSTOM_DATA_TYPE_H_
 #define SYS_CUSTOM_DATA_TYPE_H_
 
-#include <stdlib.h>
 
 /* Declare a data type that holds the characteristics of a ring buffer */
 typedef struct {
@@ -26,7 +28,7 @@ typedef struct {
 typedef enum {
     M_DATA,
     M_ACKNOWLEDGMENT
-} MessageType;
+} frame_t;
 
 typedef void* (*func_ptr)();
 
