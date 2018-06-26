@@ -17,5 +17,6 @@
 void mac_init();
 void* preamble_sampling();
 func_ptr mac_func;
+void mac_fsm(func_ptr mac_func);
 
 #endif  // end of MAC_H_

@@ -86,9 +86,9 @@ void* preamble_sampling()
     channel_assessment();
 
     //if the channel is busy 
-    if(channelBusy == true)
+    if(channel_busy == true)
     {
-        channelBusy = false;
+        channel_busy = false;
         return receive;
     }
     transceiver_disable();
@@ -104,16 +104,16 @@ static void* receive()
     uint16_t prev_data_len = rbuf_data_len(&rx_data_buf);
 
     // this while loop must be broken on a frame reception or on a timeout
-    while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (macTimeout == false) )
+    while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (mac_timeout == false) )
     {
-        frameValidation(waitFrameState);
+        frame_validation(wait_frame_state);
     }
 
 // Process anything left
     stop_capture();
     while(! rbuf_empty(&rx_buf))
     {
-        frameValidation(waitFrameState);
+        frame_validation(wait_frame_state);
     }
 //    stop_capture();
     return preamble_sampling;

@@ -1,22 +1,25 @@
 #include "tx.h"
 
-bool phaseShift = false;
+static bool phaseShift = false;
 
-// Private function prototypes
+#ifdef DEBUG
+uint8_t frameTx[FRAME_LENGTH];
+#endif
+
+/* tx module private functions prototypes */
 void backscatter(bool phaseShift);
 void backscatter_1();
 void backscatter_0();
 void backscatter_byte(uint8_t byte);
+void backscatter_frame_preamble();
 void backscatter_frame_helper(uint8_t * frame, bool phaseShift);
+
 /**
  * @description     it toggles the RF switch to backscatter
  * @param           phaseShift indicate with a phase shift is required or not
  ----------------------------------------------------------------------------*/
 void backscatter(bool phaseShift)
 {
-//    P2DIR |= BIT2;
-//    P2OUT ^= BIT2;
-
     if(phaseShift)
     {
         RFSW_OUT ^= A0;
@@ -49,7 +52,7 @@ void backscatter_0()
 
 /**
  * @description this function backscatters a given byte
- * @param       byte a byte of data to be backscattered
+ * @param       byte: a byte of data to be backscattered
  ----------------------------------------------------------------------------*/
 void backscatter_byte(uint8_t byte)
 {
@@ -64,35 +67,11 @@ void backscatter_byte(uint8_t byte)
     }
 }
 
-void backscatter_frame_helper(uint8_t * frame, bool phaseShift)
-{
-    uint8_t i;
-  for(i = 0; i < FRAME_LENGTH; i++){
-       backscatter_byte( frame[i] );
-    }
-  // to finish the last bit
-  backscatter(phaseShift);
-}
-
-#ifdef DEBUG
-uint8_t frameTx[FRAME_LENGTH];
-#endif
-
 /**
- * @description this function backscatters a frame
+ * @description this function backscatters a preamble
  ----------------------------------------------------------------------------*/
-void backscatter_frame()
+void backscatter_frame_preamble()
 {
-#ifndef DEBUG
-    uint8_t frameTx[FRAME_LENGTH];
-#endif
-    rbuf_read(frameTx, &tx_buf, FRAME_LENGTH);
-
-    phaseShift=false;
-    // transmission of non-phase shifted frame 
-//    backscatter_state(phaseShift);
-    uint8_t i ;
-    // Transmit preamble
     //if long preamble transmission is required
 #if LONG_PREAMBLE_FLAG
     mac_down_cntr(LONG_PREAMBLE_INTERVAL);
@@ -101,26 +80,50 @@ void backscatter_frame()
         backscatter_byte(PREAMBLE_BYTE);
     }
 #else
+    uint8_t i ;
     for(i = 0; i < PREAMBLE_LENGTH; i++){
         backscatter_byte(PREAMBLE_BYTE);
-        __no_operation();
      }
 #endif
+}
 
+/**
+ * @description this function backscatters a given frame, in given phase
+ * @param       frame: a pointer to frame data structure
+ * @param       phaseShift: phase shift flag
+ ----------------------------------------------------------------------------*/
+void backscatter_frame_helper(uint8_t * frame, bool phaseShift)
+{
+    uint8_t i;
+  for(i = 0; i < FRAME_LENGTH; i++){
+       backscatter_byte( frame[i] );
+    }
+  backscatter(phaseShift);              // to finish the last bit
+}
+
+/**
+ * @description this function backscatters a frame twice in two different
+ * phases
+ ----------------------------------------------------------------------------*/
+void backscatter_frame()
+{
+#ifndef DEBUG
+    uint8_t frameTx[FRAME_LENGTH];
+#endif
+    rbuf_read(frameTx, &tx_buf, FRAME_LENGTH);  // read the data from tx_buf
+                                                // and write it to frameTx
+    /* transmission of non-phase shifted frame */
+    phaseShift=false;
+
+    backscatter_frame_preamble();
     backscatter_frame_helper(frameTx, phaseShift);
+    fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 
-     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+    /* transmission of non-phase shifted frame */
+    phaseShift = true;
 
-     phaseShift = true;
-    // transmission of phase shifted frame 
-    for(i = 0; i < PREAMBLE_LENGTH; i++){
-        backscatter_byte(PREAMBLE_BYTE);
-     }
-
+    backscatter_frame_preamble();
     backscatter_frame_helper(frameTx, phaseShift);
-
-//    backscatter_state(phaseShift);
-    phaseShift = false;
     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 }
 

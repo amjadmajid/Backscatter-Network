@@ -2,7 +2,7 @@
  * node.h
  *
  *  Created on: 21 Jun 2018
- *      Author: amjad
+ *      Author: Amjad
  */
 
 #include <stdint.h>

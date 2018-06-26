@@ -27,14 +27,9 @@
 #define CRC_IDX                     FRAME_LENGTH - CRC_LENGTH
 
 /* Definition of bytes */
-// #define NODE_ID                 4
 #define PREAMBLE_BYTE           0xBB
 #define START_DELIMITER_BYTE    0xAA
-// #define SENDER_ID_BYTE          NODE_ID
 #define BROADCAST_ID_BYTE       255
-// #define RECEIVER_ID_BYTE        NODE_ID
-
-
 
 /* Length in bytes */
 #define PAYLOAD_LENGTH          4
@@ -46,7 +41,7 @@ void set_frame_type(uint8_t frame_type_val);
 void set_frame_receiver_id(uint8_t id);
 void set_frame_sender_id(uint8_t id);
 void set_ttl(uint8_t ttl_val);
-
+void update_frame_crc(uint8_t * frame);
 void create_frame(uint8_t *payloadPtr, rbuf_t * buf);
 
 #endif /* FRAME_FRAMEBUILDER_H_ */

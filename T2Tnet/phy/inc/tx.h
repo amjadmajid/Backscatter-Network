@@ -1,7 +1,8 @@
-#include "../../frame/inc/frame.h"
+#include "frame.h"
 #include "buffers.h"
 #include "radio.h"
 #include "timers.h"
+#include "debug.h"
 
 #ifndef TX_H_
 #define TX_H_

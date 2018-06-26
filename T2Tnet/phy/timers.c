@@ -1,33 +1,10 @@
 #include "timers.h"
-// timers module private function prototypes
+
+/* timers module private function prototypes */
 static uint16_t read_TA1();
 
-/*******************************************************************************
- * Timer functions
- ******************************************************************************/
-//TODO correct the description
-/* Timers overview:
- * TA0: (Available)
- * TA1: ACLK - Continuous
- *          CCR0: MAC: For RX/TX timeout
- *          CCR1: (Available)
- *          CCR2: Used by slow_timer_delay()
- * TA2: SMCLK - Continuous
- *          CCR0: (Available)
- *          CCR1: Used by fast_timer_delay()
- * TA3: (Available)
- * TB0: SMCLK - Up
- *          CCR0: (Available)
- *          CCR1: (Available)
- *          CCR2: (Available)
- *          CCR3: PHY: Used for Capturing RX events
- *          CCR4: (Available)
- *          CCR5: (Available)
- *          CCR6: (Available)
- */
-
 /**
- * @description read timerA1, without stopping it, using majority vote technique
+ * @description read TimerA1, without stopping it, using majority vote technique
  *----------------------------------------------------------------------------*/
 static uint16_t read_TA1()
 {
@@ -40,21 +17,20 @@ static uint16_t read_TA1()
 }
 
 /**
- * @description This function provide a delay service using TimerA1 and
-                 capture/compare channel 0.
- * @param       It expects the length of the delay in ACLK cycles
+ * @description This function using TimerA1 to control a flag (mac_timeout)
+ * @param       ticks: number of ACLK cycles
 -----------------------------------------------------------------------------*/
-void mac_down_cntr(uint16_t cycles)
+void mac_down_cntr(uint16_t ticks)
 {
-    macTimeout = false;
-    TA1CCR0 = read_TA1() + cycles;
+    mac_timeout = false;
+    TA1CCR0 = read_TA1() + ticks;
     TA1CCTL0 = CCIE;     // Enable Interrupts on Comparator register
 }
 
-// Timer1 A0 interrupt service routine
+// INT_Timer1_A0 handles interrupts from TA1CCR0, dedicated interrupt
 void __attribute__ ((interrupt(TIMER1_A0_VECTOR))) Timer1_A0_ISR (void)
 {
-    macTimeout = true;
+    mac_timeout = true;
     TA1CCTL0 = 0x00;
 }
 
@@ -62,15 +38,15 @@ void __attribute__ ((interrupt(TIMER1_A0_VECTOR))) Timer1_A0_ISR (void)
  * @description This function provide a delay service using TimerA1 and
                  capture/compare channel 2. It also puts the MCU into Low power
                  mode 0
- * @param       It expects the length of the delay in ACLK cycles
+ * @param       ticks: the length of the delay in ACLK cycles
 -----------------------------------------------------------------------------*/
 void slow_timer_delay(uint16_t ticks)
 {
-    TA1CCR2 = read_TA1() + ticks;    // Set compare value
-    TA1CTL &= ~TAIFG;               // Clear interrupt flag
-    TA1CCTL2 = CCIE;                // Enable Register comparator interrupt
-    /* Put MCU to low-power operation mode 3 and wait for timer interrupt. */
-    __bis_SR_register(LPM0_bits | GIE);
+    TA1CCR2 = read_TA1() + ticks;       // Set compare value
+    TA1CTL &= ~TAIFG;                   // Clear interrupt flag
+    TA1CCTL2 = CCIE;                    // Enable Register comparator interrupt
+    __bis_SR_register(LPM0_bits | GIE); // Put MCU to low-power operation mode 0
+                                        // and wait for timer interrupt.
 }
 
 /**
@@ -79,7 +55,7 @@ void slow_timer_delay(uint16_t ticks)
 *               TA1CCR2
 *               TA1R (TAIFG)
 *
-* Note: INT_Timer1_A0 handles interrupts from TA2CCR0, dedicated interrupt
+* Note: INT_Timer1_A0 handles interrupts from TA1CCR0, dedicated interrupt
 ----------------------------------------------------------------------------*/
 void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
 {
@@ -87,7 +63,7 @@ void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
         case TA1IV_NONE:   break;               // No interrupt
         case TA1IV_TACCR1:                      // CCR1 routine
             break;
-        case TA1IV_TACCR2:                      // CCR2 routine (slow_timer_delay hendler)
+        case TA1IV_TACCR2:                      // CCR2 routine (slow_timer_delay handler)
             TA1CCTL2 = 0x00;                    // Reset comparator settings
             TA1CTL &= ~TAIFG;                   // Clear Interrupt Flag
             __bic_SR_register_on_exit(LPM0_bits);
@@ -104,7 +80,7 @@ void __attribute__ ((interrupt(TIMER1_A1_VECTOR))) Timer1_A1_ISR (void)
  * @description This function provide a delay service using TimerA2 and
                  capture/compare channel 1. It also puts the MCU into Low power
                  mode 0
- * @param       It expects the length of the delay in SMCLK cycles
+ * @param        ticks: the length of the delay in SMCLK cycles
 -----------------------------------------------------------------------------*/
 void fast_timer_delay(uint16_t ticks)
 {
@@ -113,8 +89,8 @@ void fast_timer_delay(uint16_t ticks)
     TA2CCTL1 = CCIE;                    // Enable Register comparator interrupt
     TA2CTL &= ~TAIFG;                   // Clear interrupt flag
     TA2CTL |= MC__CONTINUOUS;           // resume the timer
-    // /* Put MCU to low-power operation mode 3 and wait for timer interrupt. */
-    __bis_SR_register(LPM0_bits | GIE);
+    __bis_SR_register(LPM0_bits | GIE); // Put MCU to low-power operation mode 0
+                                        // and wait for timer interrupt.
 }
 
 /**

@@ -42,10 +42,10 @@ int main(void) {
         dummy_debug = rand();
         if( (dummy_debug % 4) == 0 )
         {
-            set_node_id(2);
+            set_node_id(1);
             set_frame_type(0);
             set_frame_receiver_id(1);
-            set_frame_sender_id( 3 );
+            set_frame_sender_id( get_node_id() );
             set_ttl(10);
             create_frame( &testFrame[0], &tx_buf);
         }

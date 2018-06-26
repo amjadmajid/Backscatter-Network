@@ -1,8 +1,12 @@
 #include "radio.h"
 
-// Private function prototype
+/* radio module private function prototype */
 void rf_sw_init();
 
+/**
+ * @description     Enable the transceiver (set P4.3), and set the direction
+ *                  for the RF switch control bits
+ ----------------------------------------------------------------------------*/
 void radio_init()
 {
     transceiver_enable();
@@ -30,7 +34,7 @@ void transceiver_disable()
  * @description     set the direction pins for the RF switch (A1, A0) 
  *                  (1,1) => matching circuit (receiving)
  *                  (1,0) => mismatching circuit (backscatter with phase-shift)
- *                  (0,1) => mismatching cirtuit (backscatter)
+ *                  (0,1) => mismatching circuit (backscatter)
  ----------------------------------------------------------------------------*/
 void rf_sw_init()
 {
@@ -39,8 +43,9 @@ void rf_sw_init()
 }
 
 
-/**
- * @description     it causes the antenna matching circuit to be mismatched, to backscatter
+/**  TODO maybe I can remove this function
+ * @description     it causes the antenna matching circuit to be mismatched,
+ *                  to backscatter
  * @param           phaseShift indicates with a phase shift is required or not
  ----------------------------------------------------------------------------*/
 void backscatter_state(bool phaseShift)
@@ -56,11 +61,12 @@ void backscatter_state(bool phaseShift)
 }
 
 /**
- * @description     it causes the antenna matching circuit to be matched, to receive the signal
+ * @description     it causes the antenna matching circuit to match the antenna
+ *                  load enable receiving the signal
  ----------------------------------------------------------------------------*/
 void receive_state()
 {
    RFSW_OUT |= A0 | A1;
-   rx_line_init();
+   rx_init();
 }
 

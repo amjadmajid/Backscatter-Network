@@ -1,9 +1,13 @@
 #include "peripherals.h"
 
+/****************************************************************************
+ *                        CRC hardware module
+******************************************************************************/
+
 /**
- * @description This function calculate the CRC.
- * @param       checksum a value to calculate the CRC for it.
- * @return      It returns the CRC value
+ * @description This function calculate CRC using msp430-CRC hardware module.
+ * @param       checksum: a value to calculate the CRC for it.
+ * @return      It returns the CRC value of the checksum
 -----------------------------------------------------------------------------*/
 uint16_t calCRC(uint16_t checksum)
 {
@@ -47,23 +51,29 @@ void gpio_init()
  *              ACLK set to 32 KHz and is fed by the external oscillator 
  *              FRAM is set to 8 MHz with wait state
  ----------------------------------------------------------------------------*/
-void clock_init() {
-    // Configure one FRAM waitstate as required by the device datasheet for MCLK
-    // operation beyond 8MHz _before_ configuring the clock system.
-    FRCTL0 = FRCTLPW | NWAITS_1;
+void clock_init()
+{
+    FRCTL0 = FRCTLPW | NWAITS_1;  // Configure one FRAM wait-state as required
+                                  // by the device datasheet for MCLK operation
+                                  // beyond 8MHz _before_ configuring the clock
+                                  // system.
+    PJSEL0 |= BIT4 | BIT5;        // Make sure IO ports for Low-Frequency Crystal
+                                  // Oscillator, are set correctly
+                                  // (PJ.4/LFXIN,  PJ.5/LFXOUT)
 
-    // Make sure IO ports for Low-Frequency Crystal Oscillator, are set correctly 
-    // PJ.4/LFXIN,  PJ.5/LFXOUT
-    PJSEL0 |= BIT4 | BIT5;    
 
-    CSCTL0_H = CSKEY >> 8;                      // Unlock CS registers
-    CSCTL1 = (DCORSEL | DCOFSEL_4);             // Set DCO to 16MHz
+    CSCTL0_H = CSKEY >> 8;                   // Unlock CS registers
+    CSCTL1 = (DCORSEL | DCOFSEL_4);          // Set DCO to 16MHz
     CSCTL2 = SELA__LFXTCLK | SELS__DCOCLK | 
-                             SELM__DCOCLK;      // Set ACLK = LFXTCLK (32.768 kHz), SMCLK = MCLK = DCO (16 MHz)
-    CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;       // Set all dividers to 1
-    CSCTL4 &= ~LFXTOFF;                         // Turn on low-frequency crystal and enable it in active mode (AM) through LPM4.
-    CSCTL6 |= SMCLKREQEN;                       // If SMCLK is requested in low power modes, it should be enabled. (default setting)
-    CSCTL0_H = 0;                               // Lock CS registers
+                             SELM__DCOCLK;   // Set ACLK = LFXTCLK (32.768 kHz),
+                                             // SMCLK = MCLK = DCO (16 MHz)
+    CSCTL3 = DIVA__1 | DIVS__1 | DIVM__1;    // Set all dividers to 1
+    CSCTL4 &= ~LFXTOFF;                      // Turn on low-frequency crystal &
+                                             // enable it in active mode (AM)
+                                             // through LPM4.
+    CSCTL6 |= SMCLKREQEN;                    // If SMCLK is requested in low
+                                             // power modes, it should be enabled
+    CSCTL0_H = 0;                            // Lock CS registers
 }
 
 
@@ -72,7 +82,7 @@ void clock_init() {
 ******************************************************************************/
 
 /**
- * @description initialize timerA1
+ * @description initialize TimerA1
  ----------------------------------------------------------------------------*/
 void slow_timer_init() {
     TA1CTL = (TASSEL__ACLK |    // Use ACLK as source for timer
@@ -83,7 +93,7 @@ void slow_timer_init() {
 
 
 /** 
- * @description initialize timerA2
+ * @description initialize TimerA2
  ----------------------------------------------------------------------------*/
 void fast_timer_init() {
     TA2CTL = (TASSEL__SMCLK |    // Use SMCLK as source for timer
@@ -93,15 +103,17 @@ void fast_timer_init() {
 }
 
 /**
- * @description initialize timerB0: Setup TimerB0 for PWM signal to be used to
- *              control the backscatter switch(transmitter) at SMCLK speed
- *              The ISR of timerB0 is moved to rx.c since it is used for bits
- *              deconding
+ * @description initialize timerB0: it is used to control the RF switch
+ *              (transmitter) at SMCLK speed. The ISR of timerB0 is moved to
+ *              rx.c since it is used for bits decoding
  ----------------------------------------------------------------------------*/
 void decode_timer_init() {
     TB0CTL = TBSSEL__SMCLK | MC__UP | TBCLR;    // SMCLK, up mode, clear TBR
 }
 
+/**
+ * @description initialize all the timers
+ ----------------------------------------------------------------------------*/
 void timers_init()
 {
     slow_timer_init();

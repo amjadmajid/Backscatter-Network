@@ -2,38 +2,43 @@
  * rx.c
  *
  *  Created on: Sep 27, 2017
- *      Author: michel
+ *      Author: Michel, Amjad
  */
 
 #include "rx.h"
 
-// Private functions prototype
-void *detectFrameState();
-void *catchFrameState();
+/* rx module private functions prototype */
+void *detect_frame();
+void *catch_frame();
 
 /* Variables used for bit decoding in ISR */
-func_ptr frameDetect_fsm;
-volatile uint8_t bitCounter, byteCounter, decodedBits;
-volatile bool potentialZero;
-volatile uint16_t timeCapture;
+func_ptr frame_reception_fsm;
+volatile uint8_t bit_counter, byte_counter, decoded_bits;
+volatile bool potential_zero;
+volatile uint16_t timeCapture ;
 volatile uint8_t frame[FRAME_LENGTH] = {0};
 
-void rx_line_init(){
-	/* Configure RX port to use as input for TB0 Timer CCR3 */
-    RX_DIR &= ~RX_PIN;                          // configure RX port as an input port
-    RX_FUNC_SEL |= RX_PIN;                      // P1.6 options select (primary module function= TB0 CCR3)
+/**
+ * @description     Configure RX port to use as input for TB0 Timer CCR3.
+ *                  Initialize the frame reception FSM.
+ ----------------------------------------------------------------------------*/
+void rx_init(){
+    RX_DIR &= ~RX_PIN;     // configure RX port as an input port
+    RX_FUNC_SEL |= RX_PIN; // P1.6 options select (primary module func= TB0 CCR3)
 
-	/* Initialize state pointer for frame detection and recording */
-    frameDetect_fsm = (func_ptr) detectFrameState;
+    frame_reception_fsm = (func_ptr) detect_frame;     // Initialize state pointer for
+                                                   // frame detection and recording
 
     /* Initialize variables for RX decoding */
-	decodedBits = 0;
-	bitCounter = 0;
-	byteCounter = 0;
-	potentialZero = false;
+	decoded_bits = 0;
+	bit_counter = 0;
+	byte_counter = 0;
+	potential_zero = false;
 }
 
-/* Enable interrupts of receiver */
+/**
+ * @description     Enable interrupts on the RX pin.
+ ----------------------------------------------------------------------------*/
 void start_capture(){
     TB0CCTL3 =  CM_3    // Capture both rising and falling edge,
               | CCIS_1  // Use CCI3B = P1.6,
@@ -43,43 +48,52 @@ void start_capture(){
     TBCCR0 = 0xFFFF;
 }
 
-/* Disable interrupts of receiver */
+/**
+ * @description     Disnable interrupts on the RX pin.
+ ----------------------------------------------------------------------------*/
 void stop_capture(){
     TB0CCTL3 &= ~CCIE; // Stop capture interrupts
 }
 
-void *detectFrameState(){
-	if(decodedBits == PREAMBLE_BYTE){
-		channelBusy = true;
+/**
+ * @description     detect a preamble byte and set the channel to busy
+ *                  detect frame delimiter byte and hand in controls to
+ *                  catch_frame
+ ----------------------------------------------------------------------------*/
+void *detect_frame(){
+	if(decoded_bits == PREAMBLE_BYTE){
+		channel_busy = true;
 	}
 
-	if(decodedBits == START_DELIMITER_BYTE){
-		channelBusy = true;
-		bitCounter = 0;
-		frame[byteCounter] = decodedBits;
-		byteCounter++;
-		decodedBits = 0;
-		return catchFrameState;
+	if(decoded_bits == START_DELIMITER_BYTE){
+		channel_busy = true;
+		bit_counter = 0;
+		frame[byte_counter] = decoded_bits;
+		byte_counter++;
+		decoded_bits = 0;
+		return catch_frame;
 	}
-	return detectFrameState;
+	return detect_frame;
 }
 
-void *catchFrameState(){
-	if(bitCounter == 8){
-		bitCounter = 0;
-		frame[byteCounter] = decodedBits;
-		byteCounter++;
-		decodedBits = 0;
+/**
+ * @description     receive a frame and hand in controls to detect_frame again
+ ----------------------------------------------------------------------------*/
+void *catch_frame(){
+	if(bit_counter == 8){
+		bit_counter = 0;
+		frame[byte_counter] = decoded_bits;
+		byte_counter++;
+		decoded_bits = 0;
 	}
-	if(byteCounter == FRAME_LENGTH){
-        //disable reception
-        stop_capture();
-		byteCounter = 0;
+	if(byte_counter == FRAME_LENGTH){
+        stop_capture();     //disable reception
+		byte_counter = 0;
 		rbuf_write(&rx_buf, &frame, FRAME_LENGTH);
 		start_capture();
-		return detectFrameState;
+		return detect_frame;
 	}
-	return catchFrameState;
+	return catch_frame;
 }
 
 #if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -95,35 +109,37 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
         case TB0IV_NONE:   break;               // No interrupt
         case TB0IV_TBCCR1: break;               // CCR1 not used
         case TB0IV_TBCCR2: break;               // CCR2 not used
-        case TB0IV_TBCCR3: /* Decode bits algorithm */
-        	/* Save captured timer value and reset timer */
-            //TODO use majority voting to have a more accurate timer readings
+        case TB0IV_TBCCR3:
+        /** Decode bits algorithm */
 
-            timeCapture = TB0CCR3;
-			TB0CTL |= TBCLR;
+            /* Save captured timer value and reset timer */
+            TB0CTL &= ~MC__UP;          // stop the timer
+            timeCapture = TB0CCR3;      // read its value
+            TB0CTL |= MC__UP;           // set it back to the up mode
+			TB0CTL |= TBCLR;            // reset it
 
 			/* Check if time corresponds to a valid zero (= BIT_LENGTH/2) */
 			if( timeCapture >= (BIT_LENGTH >> 1) - TIMER_JITTER_LOW && timeCapture < (BIT_LENGTH - (BIT_LENGTH >> 2)) ){
-				if(potentialZero == 0){
-					potentialZero = true;
+				if(potential_zero == false){
+					potential_zero = true;
 				} else {
-					potentialZero = false;
-					decodedBits = (decodedBits <<1);
-					bitCounter++;
+					potential_zero = false;
+					decoded_bits = (decoded_bits <<1);
+					bit_counter++;
 				}
 			/* Check if time corresponds to a valid one (= BIT_LENGTH) */
 			} else if( timeCapture >= (BIT_LENGTH - (BIT_LENGTH >> 2)) && timeCapture <= BIT_LENGTH + TIMER_JITTER_HIGH ){
-				potentialZero = false;
-				decodedBits = (decodedBits << 1) +1;
-				bitCounter++;
+				potential_zero = false;
+				decoded_bits = (decoded_bits << 1) +1;
+				bit_counter++;
 			} else {
-				potentialZero = false;
-				decodedBits = 0;
-				bitCounter = 0;
+				potential_zero = false;
+				decoded_bits = 0;
+				bit_counter = 0;
 			}
 
 			/* Detection and recording of frames */
-			frameDetect_fsm = (func_ptr)(*frameDetect_fsm)();
+			frame_reception_fsm = (func_ptr)(*frame_reception_fsm)();
             break;
         case TB0IV_TBCCR4: break;               // CCR4 not used
         case TB0IV_TBCCR5: break;               // CCR5 not used

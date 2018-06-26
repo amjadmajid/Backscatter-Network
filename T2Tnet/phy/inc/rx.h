@@ -14,7 +14,7 @@
 #define PHY_RX_H_
 
 /* Initialize receiver */
-void rx_line_init();
+void rx_init();
 
 /* Enable or disable interrupt capability of receiver */
 void start_capture();

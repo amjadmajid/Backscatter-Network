@@ -3,34 +3,56 @@
  */
 
 #include "frameValidation.h"
-// Validation module private variables
-static uint8_t frame_validation;
+
+#if DEBUG
+    uint16_t checksum_debug = 0;
+#endif
+
+/* frameValidation module private variables*/
+static bool frame_validation_flag = true;
 static uint8_t frameRx[FRAME_LENGTH];
 
-// Private functions prototype
+/* frameValidation module private functions prototypes */
 uint8_t get_frame_sender_id(uint8_t* frame);
 uint8_t get_frame_receiver_id(uint8_t* frame);
 uint8_t get_frame_type(uint8_t* frame);
 bool update_ttl(uint8_t* frame);
 bool check_ttl(uint8_t* frame);
-void *checkCRCState();
-void *savePayloadState();
+void *check_crc_state();
+void *save_payload_state();
 
+/**
+ * @description     return the sender id from a frame data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
 uint8_t get_frame_sender_id(uint8_t *frame)
 {
     return frame[SENDER_ID_IDX];
 }
 
+/**
+ * @description     return the receiver id from a frame data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
 uint8_t get_frame_receiver_id(uint8_t *frame)
 {
     return frame[RECEIVER_ID_IDX];
 }
 
+/**
+ * @description     return the frame type from a frame data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
 uint8_t get_frame_type(uint8_t *frame)
 {
     return frame[FRAME_TYPE_IDX];
 }
 
+/**
+ * @description     reduce the TTL value in a frame
+ * @param           frame: a pointer to a frame data structure
+ * @return          if TTL is bigger than 0, it returns true, otherwise false
+ ----------------------------------------------------------------------------*/
 bool update_ttl(uint8_t *frame)
 {
     if( check_ttl(frame) )
@@ -41,39 +63,51 @@ bool update_ttl(uint8_t *frame)
     return false;
 }
 
-// return true if ttl == 0
+/**
+ * @description     reduce the TTL value in a frame
+ * @param           frame: a pointer to a frame data structure
+ * @return          if TTL is 0, it returns true, otherwise false
+ ----------------------------------------------------------------------------*/
 bool check_ttl(uint8_t *frame)
 {
-    return frame[TTL_IDX] <=0;
+    return frame[TTL_IDX] ==0;
 }
 
-/* Execute FSM for detection and processing of frames */
-void frameValidation(func_ptr frameValidationState)
+/**
+ * @description     Execute FSM to process frames
+ * @param           validation_state: a pointer to a function that represents
+ *                  a state of the frame processing FSM. The state machine will
+ *                  break when the frame_validation_flag becomes false
+ ----------------------------------------------------------------------------*/
+void frame_validation(func_ptr validation_state)
 {
-    while( frame_validation == 0 )
+    while( frame_validation_flag == true )
     {
-        frameValidationState = (func_ptr)(*frameValidationState)();
+        validation_state = (func_ptr)(*validation_state)();
     }
-    frame_validation = 0;
+    frame_validation_flag = true;
 }
 
-/* Do nothing, until frames are available */
-void *waitFrameState(){
+/**
+ * @description     read a frame from the rx_buf, and returns it the
+ *                  check_crc_state
+ ----------------------------------------------------------------------------*/
+void *wait_frame_state(){
     /* If any frames are waiting, start processing them */
     error_t error = rbuf_read(&frameRx[0], &rx_buf, FRAME_LENGTH);
     if(error == E_SUCCESS){
-        return checkCRCState;
+        return check_crc_state;
     }
-    frame_validation = 1;
-    return waitFrameState;
+    frame_validation_flag = false;
+    return wait_frame_state;
 }
 
-#if DEBUG
-    uint16_t checksum_debug =0;
-#endif
-
-/* Validate frames, and save if valid */
-void *checkCRCState(){
+/**
+ * @description     check the crc value of the received frame. If the received
+ *                  crc is valid return the save_payload_state, Else returns
+ *                  wait_frame_state and set the frame_validation_flag to false
+ ----------------------------------------------------------------------------*/
+void *check_crc_state(){
     /* Calculate CRC */
     int16_t checksum = 0;
 
@@ -90,18 +124,23 @@ void *checkCRCState(){
     /* If calculated CRC is equal to received CRC, the frame is correctly received*/
     if(CRC_Result == (frameRx[FRAME_LENGTH - CRC_LENGTH] << 8 | frameRx[FRAME_LENGTH - CRC_LENGTH + 1]) )
     {
-        return savePayloadState;
+        return save_payload_state;
     } else{
-        frame_validation = 1;
+        frame_validation_flag = false;
 #if DEBUG
         received_frame_incorrect++;
         red_led_blink( 16000 );  // 16e5/16e6 = 0.1 sec blink duration
 #endif
-        return waitFrameState;
+        return wait_frame_state;
     }
 }
 
-void *savePayloadState(){
+/**
+ * @description     if the message is for this node then save the payload.
+ *                  otherwise update the TTL, update the crc and write it to
+ *                  the tx_buf.
+ ----------------------------------------------------------------------------*/
+void *save_payload_state(){
 
     if(get_node_id() == get_frame_receiver_id( (uint8_t*) frameRx) )
     {
@@ -109,9 +148,9 @@ void *savePayloadState(){
     }
     else
     {
-        //TODO else reduce the time to live counter and retransmit
         if( update_ttl( (uint8_t*) frameRx) )
         {
+            update_frame_crc(frameRx);
             // prepare for retransmission
             rbuf_write( &tx_buf, &frameRx[0] , FRAME_LENGTH);
         }
@@ -122,8 +161,8 @@ void *savePayloadState(){
         green_led_blink( 16000 );  // 16e5/16e6 = 0.1 sec blink duration
 #endif
 
-    frame_validation = 1;
-    return waitFrameState;
+    frame_validation_flag = false;
+    return wait_frame_state;
 }
 
 
