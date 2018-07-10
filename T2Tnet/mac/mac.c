@@ -43,6 +43,7 @@ void mac_init()
     rbuf_init(&rx_buf, RX_BUFFER_SIZE);
     // initialize a buffer to save the valid data
     rbuf_init(&rx_data_buf, RX_BUFFER_SIZE);
+//    rbuf_init(&frame_id_buf, TX_BUFFER_SIZE);
 
 }
 
@@ -72,10 +73,12 @@ uint8_t end_mac_flag = false;
 
 static void channel_assessment()
 {
+    set_p3_5();
     receive_state();
     start_capture(); 
     slow_timer_delay( (uint16_t) MAC_PREAMBLE_SAMPLING_INTERVAL );
     stop_capture();
+    clear_p3_5();
 }
 
 void* preamble_sampling()
@@ -98,6 +101,7 @@ void* preamble_sampling()
 
 static void* receive()
 {
+    set_p3_6();
     mac_down_cntr((uint16_t) MAC_RX_TIMEOUT_ACLK);
     receive_state();
     start_capture(); 
@@ -115,12 +119,14 @@ static void* receive()
     {
         frame_validation(wait_frame_state);
     }
+    clear_p3_6();
 //    stop_capture();
     return preamble_sampling;
 }
 
 static void* transmit()
 {
+    set_p4_2();
     // disable capturing
     stop_capture();
     //check if the transmit buffer is not empty
@@ -129,6 +135,7 @@ static void* transmit()
         //send_frame should return an error code
         backscatter_frame();
     }
+    clear_p4_2();
     return preamble_sampling;
 }
 

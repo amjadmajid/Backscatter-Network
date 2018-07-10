@@ -1,8 +1,11 @@
 /*
  *      Authors: Amjad,  Michel
  */
-
 #include "frameValidation.h"
+// TODO this buffer size limit the network size to 50 nodes
+// if I moved we to FRAM we can enlarge it
+uint16_t crc_buf[20] = {0};
+uint16_t crc_buf_idx = 0;
 
 #if DEBUG
     uint16_t checksum_debug = 0;
@@ -16,6 +19,11 @@ static uint8_t frameRx[FRAME_LENGTH];
 uint8_t get_frame_sender_id(uint8_t* frame);
 uint8_t get_frame_receiver_id(uint8_t* frame);
 uint8_t get_frame_type(uint8_t* frame);
+uint16_t get_frame_crc(uint8_t* frame);
+uint16_t get_buffered_crc(uint8_t *frame);
+bool check_linear_buffered_crc(uint8_t *frame);
+void update_linear_buffered_crc(uint8_t *frame);
+void update_buffered_crc(uint8_t *frame);
 bool update_ttl(uint8_t* frame);
 bool check_ttl(uint8_t* frame);
 void *check_crc_state();
@@ -46,6 +54,73 @@ uint8_t get_frame_receiver_id(uint8_t *frame)
 uint8_t get_frame_type(uint8_t *frame)
 {
     return frame[FRAME_TYPE_IDX];
+}
+
+/**
+ * @description     return the CRC of a frame data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
+uint16_t get_frame_crc(uint8_t *frame)
+{
+    return ( (uint16_t) frame[CRC_IDX] << 8 )  | frame[CRC_IDX + 1];
+}
+
+/**
+ * @description     return the CRC of crc_buf data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
+uint16_t get_buffered_crc(uint8_t *frame)
+{
+    return crc_buf[get_frame_sender_id(frame)];
+}
+
+
+/**
+ * @description     update a cell in  crc_buf data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
+void update_buffered_crc(uint8_t *frame)
+{
+    crc_buf[get_frame_sender_id(frame)] = get_frame_crc(frame);
+}
+
+#if DEBUG
+    uint16_t crc;
+#endif
+/**
+ * @description     returns true if the crc of the frame is found in the crc
+ *                  buffer, otherwise returns false
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
+bool check_linear_buffered_crc(uint8_t *frame)
+{
+#ifndef DEBUG
+    uint16_t
+#endif
+    crc =  get_frame_crc (frame);
+
+    uint16_t cntr = 0;
+    while (cntr <= crc_buf_idx)
+    {
+        // If a match is found, then the frame is old
+        if (crc == crc_buf[cntr])
+        {
+            return true;
+        }
+        cntr++;
+    }
+    // the frame is new
+    return false;
+}
+
+/**
+ * @description     update a cell in  crc_buf data structure
+ * @param           frame: a pointer to a frame data structure
+ ----------------------------------------------------------------------------*/
+void update_linear_buffered_crc(uint8_t *frame)
+{
+    crc_buf[crc_buf_idx] = get_frame_crc(frame);
+    crc_buf_idx++;
 }
 
 /**
@@ -128,8 +203,8 @@ void *check_crc_state(){
     } else{
         frame_validation_flag = false;
 #if DEBUG
-        received_frame_incorrect++;
-        red_led_blink( 16000 );  // 16e5/16e6 = 0.1 sec blink duration
+        set_p1_2();
+        clear_p1_2();
 #endif
         return wait_frame_state;
     }
@@ -142,30 +217,85 @@ void *check_crc_state(){
  ----------------------------------------------------------------------------*/
 void *save_payload_state(){
 
-    if(get_node_id() == get_frame_receiver_id( (uint8_t*) frameRx) )
+//    // check if the message is new (single depth history)
+//    if ( get_frame_crc(frameRx) != get_buffered_crc(frameRx) )
+//    {
+//        // register the new frame
+//        update_buffered_crc(frameRx);
+
+
+//*// Using Linear buffer and linear check
+    if(!check_linear_buffered_crc(frameRx))
     {
-        rbuf_write( &rx_data_buf, &frameRx[PAYLOAD_IDX] , PAYLOAD_LENGTH);
-    }
-    else
-    {
-        if( update_ttl( (uint8_t*) frameRx) )
+        update_linear_buffered_crc(frameRx);
+
+        uint16_t r_id =  get_frame_receiver_id( (uint8_t*) frameRx);
+
+        if(r_id == BROADCAST_ID_BYTE)              // broadcasting
         {
-            update_frame_crc(frameRx);
-            // prepare for retransmission
+            // * saving
+            rbuf_write( &rx_data_buf, &frameRx[PAYLOAD_IDX] , PAYLOAD_LENGTH);
+            // * re-transmission
             rbuf_write( &tx_buf, &frameRx[0] , FRAME_LENGTH);
         }
-    }
+        else if (r_id == get_node_id())         // point-to-point (intended receiver)
+        {
+            rbuf_write( &rx_data_buf, &frameRx[PAYLOAD_IDX] , PAYLOAD_LENGTH);
+            // send acknowledgment
+            // set frame type
+            set_frame_type(ACK_FRAME);
+            // set the receiver id
+            set_frame_receiver_id(get_frame_receiver_id(frameRx));
+            // set the sender id
+            set_frame_sender_id(get_node_id());
+            // set frame id (its crc) in the first two bytes of the payload
+            uint16_t crc_tmp = get_frame_crc(frameRx);
+            uint8_t payload[PAYLOAD_LENGTH] = { (uint8_t) (crc_tmp >> 8) & 0xff, (uint8_t) (crc_tmp) & 0xff, 0};
+#if DEBUG
+            __bic_SR_register(GIE);
+            create_frame(payload, &tx_buf);
+            __bis_SR_register(GIE);
+#else
+           create_frame(payload, &tx_buf);
+#endif
 
 #if DEBUG
-        received_frame_correct++;
-        green_led_blink( 16000 );  // 16e5/16e6 = 0.1 sec blink duration
+            set_p3_0();
+            clear_p3_0();
+            green_led_blink( 16000 );
 #endif
+        }
+        else  // point-to-point (relay node)
+        {
+            /*
+             * For now ttl will not be used,
+             ---------------------------------*/
+
+    //        if( update_ttl( (uint8_t*) frameRx) )
+    //        {
+    //            update_frame_crc(frameRx);
+    //            // prepare for retransmission
+                rbuf_write( &tx_buf, &frameRx[0] , FRAME_LENGTH);
+    //        }
+#if DEBUG
+        red_led_blink( 16000 );  // 16e5/16e6 = 0.1 sec blink duration
+        set_p1_4();
+        clear_p1_4();
+#endif
+        }
+    }
+#if DEBUG
+    else
+    {
+        set_p1_3();
+        clear_p1_3();
+    }
+#endif
+
 
     frame_validation_flag = false;
     return wait_frame_state;
 }
-
-
 
 
 

@@ -25,6 +25,7 @@ void init()
 
 #if DEBUG
     leds_init();
+    debug_pins_init();
 #endif
 
 }
@@ -32,22 +33,26 @@ int main(void) {
     init();
     mac_init();
     uint8_t testFrame[] = {0x11, 0x22, 0x33,0x44};
+    set_node_id(2);
 
     while(1)
     {
         mac_fsm(preamble_sampling);
 #ifdef TX_APP
-        slow_timer_delay(1000);    // reduce the transmission rate (random guess)
+        slow_timer_delay(SLEEP_PERIOD_ACLK);    // reduce the transmission rate (random guess)
         //TODO transmit with a probability (use rand)
         dummy_debug = rand();
-        if( (dummy_debug % 4) == 0 )
+        if( (dummy_debug % 16) == 0 )
         {
-            set_node_id(1);
             set_frame_type(0);
             set_frame_receiver_id(1);
             set_frame_sender_id( get_node_id() );
             set_ttl(10);
             create_frame( &testFrame[0], &tx_buf);
+#if DEBUG
+      set_p2_5();
+      clear_p2_5();
+#endif
         }
 #endif
     }

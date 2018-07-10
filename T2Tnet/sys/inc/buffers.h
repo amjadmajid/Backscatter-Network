@@ -1,11 +1,12 @@
 #include "custom_data_type.h"
 #include "debug.h"
+#include "control_flags.h"
 
 #ifndef BUFFERS_H_
 #define BUFFERS_H_
 
-#define RX_BUFFER_SIZE		FRAME_LENGTH * 6					// Buffer size in bytes
-#define TX_BUFFER_SIZE		FRAME_LENGTH * 2					// Buffer size in bytes
+#define RX_BUFFER_SIZE		        FRAME_LENGTH * 6					// Buffer size in bytes
+#define TX_BUFFER_SIZE		        FRAME_LENGTH * 4					// Buffer size in bytes
 
 /* buffers module public functions prototyping */
 void rbuf_init(rbuf_t *rbuf, uint8_t rbuf_size);

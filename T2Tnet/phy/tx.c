@@ -75,7 +75,7 @@ void backscatter_frame_preamble()
     //if long preamble transmission is required
 #if LONG_PREAMBLE_FLAG
     mac_down_cntr(LONG_PREAMBLE_INTERVAL);
-    while(!macTimeout)
+    while(!mac_timeout)
     {
         backscatter_byte(PREAMBLE_BYTE);
     }
@@ -107,6 +107,12 @@ void backscatter_frame_helper(uint8_t * frame, bool phaseShift)
  ----------------------------------------------------------------------------*/
 void backscatter_frame()
 {
+
+#if DEBUG
+      set_p2_6();
+      clear_p2_6();
+#endif
+
 #ifndef DEBUG
     uint8_t frameTx[FRAME_LENGTH];
 #endif
@@ -116,15 +122,19 @@ void backscatter_frame()
     phaseShift=false;
 
     backscatter_frame_preamble();
+    clear_p4_2();
+    set_p4_2();
     backscatter_frame_helper(frameTx, phaseShift);
     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
 
-    /* transmission of non-phase shifted frame */
-    phaseShift = true;
+#ifdef PHASE_SHIFT
+        /* transmission of non-phase shifted frame */
+        phaseShift = true;
 
-    backscatter_frame_preamble();
-    backscatter_frame_helper(frameTx, phaseShift);
-    fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+        backscatter_frame_preamble();
+        backscatter_frame_helper(frameTx, phaseShift);
+        fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+#endif
 }
 
 

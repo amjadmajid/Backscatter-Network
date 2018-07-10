@@ -37,6 +37,10 @@
 #define PREAMBLE_LENGTH         3 // Preamble length is only used in PER_TX_MODE or PER_RX_MODE
 #define FRAME_LENGTH            11
 
+/* Message types */
+#define DATA_FRAME              0       // Data message
+#define ACK_FRAME               1       // Acknowledgment message
+
 void set_frame_type(uint8_t frame_type_val);
 void set_frame_receiver_id(uint8_t id);
 void set_frame_sender_id(uint8_t id);
