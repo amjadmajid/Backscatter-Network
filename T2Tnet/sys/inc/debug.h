@@ -24,6 +24,8 @@ void clear_p2_6();
 void set_p2_6();
 void clear_p2_5();
 void set_p2_5();
+void set_p1_7();
+void clear_p1_7();
 void clear_p1_4();
 void set_p1_4();
 void clear_p1_3();
@@ -36,7 +38,6 @@ void set_p3_6();
 void clear_p3_6();
 void set_p4_2();
 void clear_p4_2();
-
 
 uint16_t received_frame_correct;
 uint16_t received_frame_incorrect;

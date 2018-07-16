@@ -241,24 +241,25 @@ void *save_payload_state(){
         else if (r_id == get_node_id())         // point-to-point (intended receiver)
         {
             rbuf_write( &rx_data_buf, &frameRx[PAYLOAD_IDX] , PAYLOAD_LENGTH);
-            // send acknowledgment
-            // set frame type
-            set_frame_type(ACK_FRAME);
-            // set the receiver id
-            set_frame_receiver_id(get_frame_receiver_id(frameRx));
-            // set the sender id
-            set_frame_sender_id(get_node_id());
-            // set frame id (its crc) in the first two bytes of the payload
-            uint16_t crc_tmp = get_frame_crc(frameRx);
-            uint8_t payload[PAYLOAD_LENGTH] = { (uint8_t) (crc_tmp >> 8) & 0xff, (uint8_t) (crc_tmp) & 0xff, 0};
-#if DEBUG
-            __bic_SR_register(GIE);
-            create_frame(payload, &tx_buf);
-            __bis_SR_register(GIE);
-#else
-           create_frame(payload, &tx_buf);
-#endif
-
+/*
+                // send acknowledgment
+                // set frame type
+                set_frame_type(ACK_FRAME);
+                // set the receiver id
+                set_frame_receiver_id(get_frame_receiver_id(frameRx));
+                // set the sender id
+                set_frame_sender_id(get_node_id());
+                // set frame id (its crc) in the first two bytes of the payload
+                uint16_t crc_tmp = get_frame_crc(frameRx);
+                uint8_t payload[PAYLOAD_LENGTH] = { (uint8_t) (crc_tmp >> 8) & 0xff, (uint8_t) (crc_tmp) & 0xff, 0};
+    #if DEBUG
+                __bic_SR_register(GIE);
+                create_frame(payload, &tx_buf);
+                __bis_SR_register(GIE);
+    #else
+               create_frame(payload, &tx_buf);
+    #endif
+*/
 #if DEBUG
             set_p3_0();
             clear_p3_0();

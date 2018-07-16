@@ -12,7 +12,7 @@
  ----------------------------------------------------------------------------*/
 void debug_pins_init()
 {
-    P1DIR |= BIT2 | BIT3 | BIT4;
+    P1DIR |= BIT2 | BIT3 | BIT4| BIT7;
     P2DIR |= BIT5 | BIT6;
     P3DIR |= BIT0 | BIT5 | BIT6;
     P4DIR |= BIT2;
@@ -64,6 +64,22 @@ void set_p1_4()
 void clear_p1_4()
 {
     P1OUT &= ~BIT4;
+}
+
+/**
+ * @description raise port 1 pint 7
+ ----------------------------------------------------------------------------*/
+void set_p1_7()
+{
+    P1OUT |= BIT7;
+}
+
+/**
+ * @description clear port 1 pint 7
+ ----------------------------------------------------------------------------*/
+void clear_p1_7()
+{
+    P1OUT &= ~BIT7;
 }
 
 /**
@@ -147,7 +163,7 @@ void clear_p3_6()
 }
 
 /**
- * @description raise port 3 pint 6
+ * @description raise port 4 pint 2
  ----------------------------------------------------------------------------*/
 void set_p4_2()
 {
