@@ -52,6 +52,7 @@ uint8_t end_mac_flag = false;
 {
     while(1)
     {
+        receive_state();
         // go through mac fsm  until you reach a transmit state
         // upon entering a transmit state set end_mac_flag
         // After leaving the transmit state break the mac fsm
@@ -74,7 +75,6 @@ uint8_t end_mac_flag = false;
 static void channel_assessment()
 {
     set_p3_5();
-    receive_state();
     start_capture(); 
     slow_timer_delay( (uint16_t) MAC_PREAMBLE_SAMPLING_INTERVAL );
     stop_capture();
@@ -94,7 +94,7 @@ void* preamble_sampling()
         channel_busy = false;
         return receive;
     }
-    transceiver_disable();
+//    transceiver_disable();
     return transmit;
 }
 
@@ -103,7 +103,6 @@ static void* receive()
 {
     set_p3_6();
     mac_down_cntr((uint16_t) MAC_RX_TIMEOUT_ACLK);
-    receive_state();
     start_capture(); 
     uint16_t prev_data_len = rbuf_data_len(&rx_data_buf);
 

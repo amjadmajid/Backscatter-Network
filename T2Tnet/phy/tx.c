@@ -126,6 +126,7 @@ void backscatter_frame()
     set_p4_2();
     backscatter_frame_helper(frameTx, phaseShift);
     fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+    receive_state();
 
 #ifdef PHASE_SHIFT
         /* transmission of non-phase shifted frame */
@@ -134,6 +135,7 @@ void backscatter_frame()
         backscatter_frame_preamble();
         backscatter_frame_helper(frameTx, phaseShift);
         fast_timer_delay( (uint16_t) INTERFRAME_TIME);
+        receive_state();
 #endif
 }
 

@@ -13,7 +13,7 @@ uint16_t crc_buf_idx = 0;
 
 /* frameValidation module private variables*/
 static bool frame_validation_flag = true;
-static uint8_t frameRx[FRAME_LENGTH];
+uint8_t frameRx[FRAME_LENGTH];
 
 /* frameValidation module private functions prototypes */
 uint8_t get_frame_sender_id(uint8_t* frame);
@@ -60,9 +60,11 @@ uint8_t get_frame_type(uint8_t *frame)
  * @description     return the CRC of a frame data structure
  * @param           frame: a pointer to a frame data structure
  ----------------------------------------------------------------------------*/
+uint16_t debug_crc;
 uint16_t get_frame_crc(uint8_t *frame)
 {
-    return ( (uint16_t) frame[CRC_IDX] << 8 )  | frame[CRC_IDX + 1];
+    debug_crc = ( ((uint16_t) frame[CRC_IDX]) << 8 )  | frame[CRC_IDX + 1];
+    return debug_crc;
 }
 
 /**
