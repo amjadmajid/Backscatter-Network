@@ -174,7 +174,48 @@ error_t rbuf_read( uint8_t *data, rbuf_t *rbuf, uint8_t numBytes)
     return E_SUCCESS;
 }
 
+/** rbuf_search:
+ * search a buffer for a certain word
+ *
+ * @param *rbuf     pointer to a ring buffer
+ * @param word      a byte of data
+ * @return bool     "true" if the word is found, else "false"
+ */
+#ifdef DEBUG
+uint8_t wh,  wl, crch, crcl;
+uint16_t word_debug;
+uint16_t buf_len;
+#endif  
+bool rbuf_crc_search( rbuf_t *rbuf, uint16_t word)
+{
+    uint16_t cntr = 0;
+#ifdef DEBUG
+    word_debug =  word;
+#endif
+#ifndef DEBUG
+    uint8_t
+#endif
+    wh = (word>>8) & 0xff;
+    wl = (word) & 0xff;
+#ifndef DEBUG
+    uint8_t
+#endif
+   buf_len = (rbuf->data_len);
+    while( cntr < (rbuf->data_len))
+    {
+        // this buffer is never read from
+        // therefore we can always start reading it from index 0
+        crch = rbuf->buffer[cntr + 1];
+        crcl = rbuf->buffer[cntr];
 
+        if ( wh == crch  &&  wl == crcl )
+        {
+            return true;
+        }
+        cntr+=2;
+    }
+return false;
+}
 
 
 

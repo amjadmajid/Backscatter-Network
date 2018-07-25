@@ -6,6 +6,8 @@
 #ifndef FRAME_H_
 #define FRAME_H_
 
+rbuf_t crc_buf;
+
 /*---------------------------------------------------
  * Frame structure (11b):
  * - Preamble               Time-based
@@ -34,7 +36,7 @@
 /* Length in bytes */
 #define PAYLOAD_LENGTH          4
 #define CRC_LENGTH              2
-#define PREAMBLE_LENGTH         3 // Preamble length is only used in PER_TX_MODE or PER_RX_MODE
+#define PREAMBLE_LENGTH         60 // Preamble length is only used in PER_TX_MODE or PER_RX_MODE
 #define FRAME_LENGTH            11
 
 /* Message types */
@@ -45,7 +47,8 @@ void set_frame_type(uint8_t frame_type_val);
 void set_frame_receiver_id(uint8_t id);
 void set_frame_sender_id(uint8_t id);
 void set_ttl(uint8_t ttl_val);
-void update_frame_crc(uint8_t * frame);
+uint16_t frame_crc_checksum( uint8_t * frameBxIn );
+void update_frame_crc(uint8_t * frameBxIn, uint16_t crc);
 void create_frame(uint8_t *payloadPtr, rbuf_t * buf);
 
 #endif /* FRAME_FRAMEBUILDER_H_ */

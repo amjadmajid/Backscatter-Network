@@ -18,7 +18,7 @@ typedef struct {
     uint8_t *buffer;                // a pointer to hold the address to the ring buffer
     size_t size;                    // `size_t` is used here to represent buffer
                                     // object size in byte. `malloc` expects this data type
-    size_t data_len;                // capture the length of the valid
+    int16_t data_len;                // capture the length of the valid
     size_t head;                    // the start index of the valid data
     size_t tail;                    // the end index of the valid data
 }rbuf_t;

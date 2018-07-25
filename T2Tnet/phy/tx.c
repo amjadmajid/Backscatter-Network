@@ -36,7 +36,7 @@ void backscatter(bool phaseShift)
 void backscatter_1()
 {
     backscatter(phaseShift);
-    fast_timer_delay( (uint16_t) BIT_LENGTH);
+    fast_timer_delay( (uint16_t) BIT_LEN_SMCLK);
 }
 
 /**
@@ -45,9 +45,9 @@ void backscatter_1()
 void backscatter_0()
 {
     backscatter(phaseShift);
-    fast_timer_delay( (uint16_t) BIT_LENGTH >> 1);
+    fast_timer_delay( (uint16_t) BIT_LEN_SMCLK >> 1);
     backscatter(phaseShift);
-    fast_timer_delay( (uint16_t) BIT_LENGTH >> 1);
+    fast_timer_delay( (uint16_t) BIT_LEN_SMCLK >> 1);
 }
 
 /**

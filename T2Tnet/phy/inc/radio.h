@@ -27,15 +27,18 @@
 /**
  * Timer wait time length definitions
  */
-#define BIT_LENGTH              1600       // SMCLK (16 MHz) -> 10 kbps
 #define INTERFRAME_TIME         4000       // Time between consecutive frames in SMCLK cycles
 #define TIMER_JITTER_LOW        400         // SMCLK cycles
 #define TIMER_JITTER_HIGH       600         // SMCLK cycles
 
-bool channel_busy;
+extern volatile bool channel_busy;
+extern volatile bool preamble_detected;
 
-#define SLEEP_PERIOD_ACLK       10000
-#define LONG_PREAMBLE_INTERVAL  2*SLEEP_PERIOD_ACLK
+#define SLEEP_PERIOD_ACLK       1000
+#define BIT_LEN_ACLK    4 // 3.2768 rounded up to 4 to avoid floating numbers
+#define BIT_LEN_SMCLK   1600
+#define PREAMBLE_SAMPLING_INTERVAL   BIT_LEN_ACLK * 50     
+#define LONG_PREAMBLE_INTERVAL  PREAMBLE_SAMPLING_INTERVAL + SLEEP_PERIOD_ACLK
 
 
 void transceiver_enable();

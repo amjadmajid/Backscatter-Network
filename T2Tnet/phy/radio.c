@@ -1,5 +1,8 @@
 #include "radio.h"
 
+volatile bool channel_busy = false;
+volatile bool preamble_detected = false;
+
 /* radio module private function prototype */
 void rf_sw_init();
 

@@ -20,6 +20,6 @@ void rx_init();
 void start_capture();
 void stop_capture();
 
-rbuf_t rx_buf;
+extern rbuf_t rx_buf;
 
 #endif /* PHY_RX_H_ */

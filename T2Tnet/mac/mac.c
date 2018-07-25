@@ -1,78 +1,24 @@
 #include "mac.h"
 
 // Private functions prototype
-static void channel_assessment();
-static void* receive();
+static void receive();
 static void* transmit();
-
-/*
-Mac steps:
-1. trigger mac_fsm()
-    1.1 preamble_sampling
-        1.1.1 receiving_state
-        1.1.2 sleep
-    1.2 if the channel is busy 
-        1.2.1 receive
-        1.2.2 return mac_fsm
-    1.3 if the channel is free and the tx buffer is not empty
-        1.3.1 transmit
-        1.3.2 return mac_fsm
-    1.4 else
-        1.4.1 turn off radio (or only disable interrupts, if the radio requires long time to reach stable state)
-        1.4.2 switch to computation
-*/
-
-/*
-Switching between computation and mac
-1. timer based
-    1.1 the computation is interrupted using timer and all the mac is handled within
-        the interrupt, nested interrupt handling is required. 
-    1.2 task granularity based switching mechanism: after each x weighted computation tasks, execute the mac
-*/
-
-/*
-Stating point: mac without computation 
-*/
+inline static void channel_assessment();
 
 
 void mac_init()
 {
-
     // initialize the buffers
     rbuf_init(&tx_buf, TX_BUFFER_SIZE);
     rbuf_init(&rx_buf, RX_BUFFER_SIZE);
+    rbuf_init(&crc_buf, CRC_BUFFER_SIZE);
     // initialize a buffer to save the valid data
     rbuf_init(&rx_data_buf, RX_BUFFER_SIZE);
-//    rbuf_init(&frame_id_buf, TX_BUFFER_SIZE);
-
 }
 
 uint8_t end_mac_flag = false;
- void mac_fsm(func_ptr mac_func)
-{
-    while(1)
-    {
-        receive_state();
-        // go through mac fsm  until you reach a transmit state
-        // upon entering a transmit state set end_mac_flag
-        // After leaving the transmit state break the mac fsm
-        // do computation and restart the mac fsm
-        if(mac_func == transmit)
-            {
-                end_mac_flag = true;
-            }
-        
-        mac_func = (func_ptr) (*mac_func)();
-        
-        if(end_mac_flag)
-            {
-                end_mac_flag = false;
-                break;
-            }
-    }
-}
 
-static void channel_assessment()
+inline static void channel_assessment()
 {
     set_p3_5();
     start_capture(); 
@@ -81,35 +27,17 @@ static void channel_assessment()
     clear_p3_5();
 }
 
-void* preamble_sampling()
+static void receive()
 {
-    transceiver_enable();
-	//uint16_t randomCsmaTime = rand() % MAC_EXTRA_CSMA_MAX_ACLK;
-    // preamble sampling
-    channel_assessment();
-
-    //if the channel is busy 
-    if(channel_busy == true)
-    {
-        channel_busy = false;
-        return receive;
-    }
-//    transceiver_disable();
-    return transmit;
-}
-
-
-static void* receive()
-{
+    start_capture();
     set_p3_6();
     mac_down_cntr((uint16_t) MAC_RX_TIMEOUT_ACLK);
-    start_capture(); 
     uint16_t prev_data_len = rbuf_data_len(&rx_data_buf);
 
     // this while loop must be broken on a frame reception or on a timeout
     while( (rbuf_data_len(&rx_data_buf) - prev_data_len == 0) && (mac_timeout == false) )
     {
-        frame_validation(wait_frame_state);
+//        frame_validation(wait_frame_state);
     }
 
 // Process anything left
@@ -119,9 +47,9 @@ static void* receive()
         frame_validation(wait_frame_state);
     }
     clear_p3_6();
-//    stop_capture();
-    return preamble_sampling;
+//    return preamble_sampling;
 }
+
 
 static void* transmit()
 {
@@ -138,10 +66,62 @@ static void* transmit()
     return preamble_sampling;
 }
 
+void* preamble_sampling()
+{
+    transceiver_enable();
+    channel_assessment();
+    if(preamble_detected == true)
+    {
+        mac_down_cntr((uint16_t) LONG_PREAMBLE_INTERVAL);
 
+        while((channel_busy == false) && (mac_timeout == false) )
+        {
+            channel_assessment();
+            __no_operation();
+        }
+    }
 
+    preamble_detected = false;
 
+    //if the channel is busy
+    if(channel_busy == true)
+    {
+        channel_busy = false;
+        // to speedup the transition to the receive state
+        receive();
+        // to not let all the rely nodes to estimate the channel and backscatter at the same time
+        // introduce a random delay
+        slow_timer_delay( rand() % 180); // channel assessment should be (180/32768) + (8/10000) = 6.3 msec
 
+        return preamble_sampling;
+    }
+//    transceiver_disable();
+    return transmit;
+}
+
+void mac_fsm(func_ptr mac_func)
+{
+   while(1)
+   {
+       receive_state();
+       // go through mac fsm  until you reach a transmit state
+       // upon entering a transmit state set end_mac_flag
+       // After leaving the transmit state break the mac fsm
+       // do computation and restart the mac fsm
+       if(mac_func == transmit)
+           {
+               end_mac_flag = true;
+           }
+
+       mac_func = (func_ptr) (*mac_func)();
+
+       if(end_mac_flag)
+           {
+               end_mac_flag = false;
+               break;
+           }
+   }
+}
 
 
 

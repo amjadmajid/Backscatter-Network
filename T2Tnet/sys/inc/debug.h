@@ -41,7 +41,8 @@ void clear_p4_2();
 
 uint16_t received_frame_correct;
 uint16_t received_frame_incorrect;
-
+uint16_t forward_frame;
+volatile uint16_t received_frame;
 
 
 #endif /* SYS_INC_DEBUG_H_ */

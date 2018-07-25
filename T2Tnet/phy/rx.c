@@ -6,7 +6,7 @@
  */
 
 #include "rx.h"
-
+ rbuf_t rx_buf;
 /* rx module private functions prototype */
 void *detect_frame();
 void *catch_frame();
@@ -62,7 +62,7 @@ void stop_capture(){
  ----------------------------------------------------------------------------*/
 void *detect_frame(){
 	if(decoded_bits == PREAMBLE_BYTE){
-		channel_busy = true;
+		 preamble_detected = true;
 	}
 
 	if(decoded_bits == START_DELIMITER_BYTE){
@@ -89,7 +89,11 @@ void *catch_frame(){
 	if(byte_counter == FRAME_LENGTH){
         stop_capture();     //disable reception
 		byte_counter = 0;
-		rbuf_write(&rx_buf, &frame, FRAME_LENGTH);
+		rbuf_write(&rx_buf, (uint8_t *)&frame, FRAME_LENGTH);
+		received_frame++;
+		set_p1_4();
+		clear_p1_4();
+//		green_led_blink(1000);
 		start_capture();
 		return detect_frame;
 	}
@@ -118,8 +122,8 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
             TB0CTL |= MC__UP;           // set it back to the up mode
 			TB0CTL |= TBCLR;            // reset it
 
-			/* Check if time corresponds to a valid zero (= BIT_LENGTH/2) */
-			if( timeCapture >= (BIT_LENGTH >> 1) - TIMER_JITTER_LOW && timeCapture < (BIT_LENGTH - (BIT_LENGTH >> 2)) ){
+			/* Check if time corresponds to a valid zero (= BIT_LEN_SMCLK/2) */
+			if( timeCapture >= (BIT_LEN_SMCLK >> 1) - TIMER_JITTER_LOW && timeCapture < (BIT_LEN_SMCLK - (BIT_LEN_SMCLK >> 2)) ){
 				if(potential_zero == false){
 					potential_zero = true;
 				} else {
@@ -127,8 +131,8 @@ void __attribute__ ((interrupt(TIMER0_B1_VECTOR))) Timer0_B1_ISR (void)
 					decoded_bits = (decoded_bits <<1);
 					bit_counter++;
 				}
-			/* Check if time corresponds to a valid one (= BIT_LENGTH) */
-			} else if( timeCapture >= (BIT_LENGTH - (BIT_LENGTH >> 2)) && timeCapture <= BIT_LENGTH + TIMER_JITTER_HIGH ){
+			/* Check if time corresponds to a valid one (= BIT_LEN_SMCLK) */
+			} else if( timeCapture >= (BIT_LEN_SMCLK - (BIT_LEN_SMCLK >> 2)) && timeCapture <= BIT_LEN_SMCLK + TIMER_JITTER_HIGH ){
 				potential_zero = false;
 				decoded_bits = (decoded_bits << 1) +1;
 				bit_counter++;
