@@ -37,10 +37,11 @@
  *          CCR6: (Available)
  */
 
-volatile bool mac_timeout;
+volatile bool * mac_timeout;
+bool rx_timeout;
 
 void slow_timer_delay(uint16_t ticks);
 void fast_timer_delay(uint16_t ticks);
-void mac_down_cntr(uint16_t cycles);
+void mac_down_cntr(uint16_t ticks, bool * timeout_ptr);
 
 #endif /* PHY_TIMERS_H_ */

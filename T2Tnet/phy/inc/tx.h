@@ -9,5 +9,6 @@
 
 void backscatter_frame();
 rbuf_t tx_buf;
+bool tx_preamble_timeout;
 
 #endif	// end the TX_H_

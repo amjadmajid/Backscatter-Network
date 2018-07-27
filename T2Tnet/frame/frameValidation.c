@@ -204,6 +204,7 @@ void *save_payload_state()
         else if (r_id == get_node_id())         // point-to-point (intended receiver)
         {
             rbuf_write( &rx_data_buf, &frameRx[PAYLOAD_IDX] , PAYLOAD_LENGTH);
+            received_frame_correct++;
         }
         else  // point-to-point (relay node)
         {

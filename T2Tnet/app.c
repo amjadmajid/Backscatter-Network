@@ -22,7 +22,7 @@ void init()
     radio_init();
     _BIS_SR(GIE);
 
-    srand((unsigned) 3 );
+    srand((unsigned) 9 );
 
 #if DEBUG
     leds_init();
@@ -36,7 +36,7 @@ int main(void) {
     set_p1_7();
     mac_init();
     uint8_t testFrame[] = {0x00, 0x09, 0x91,0x29};
-    set_node_id(2);
+    set_node_id(1);
 
     while(1)
     {
@@ -50,7 +50,7 @@ int main(void) {
         if( (dummy_debug % 64) == 0  && (tx_cntr < transmitted_frame))
         {
             set_frame_type(0);
-            set_frame_receiver_id(6);
+            set_frame_receiver_id(8);
             set_frame_sender_id( get_node_id() );
             set_ttl(10);
             testFrame[0]++;

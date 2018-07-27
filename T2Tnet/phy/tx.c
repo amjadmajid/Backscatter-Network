@@ -74,8 +74,8 @@ void backscatter_frame_preamble()
 {
     //if long preamble transmission is required
 #if LONG_PREAMBLE_FLAG
-    mac_down_cntr(LONG_PREAMBLE_INTERVAL);
-    while(!mac_timeout)
+    mac_down_cntr(LONG_PREAMBLE_INTERVAL, &tx_preamble_timeout);
+    while(!tx_preamble_timeout)
     {
         backscatter_byte(PREAMBLE_BYTE);
     }

@@ -20,9 +20,10 @@ static uint16_t read_TA1()
  * @description This function using TimerA1 to control a flag (mac_timeout)
  * @param       ticks: number of ACLK cycles
 -----------------------------------------------------------------------------*/
-void mac_down_cntr(uint16_t ticks)
+void mac_down_cntr(uint16_t ticks, bool * timeout_ptr)
 {
-    mac_timeout = false;
+    *timeout_ptr = false;
+    mac_timeout = timeout_ptr;
     TA1CCR0 = read_TA1() + ticks;
     TA1CCTL0 = CCIE;     // Enable Interrupts on Comparator register
 }
@@ -30,7 +31,7 @@ void mac_down_cntr(uint16_t ticks)
 // INT_Timer1_A0 handles interrupts from TA1CCR0, dedicated interrupt
 void __attribute__ ((interrupt(TIMER1_A0_VECTOR))) Timer1_A0_ISR (void)
 {
-    mac_timeout = true;
+    *mac_timeout = true;
     TA1CCTL0 = 0x00;
 }
 
