@@ -17,9 +17,9 @@ np.set_printoptions(threshold=np.nan)
 ##################################################
 #			   Variable definitions
 ##################################################
-sig_start =  0
-sig_len	  =  800800
-backscatter_len =  1400
+sig_start =  0e6
+sig_len	  =  10e6
+backscatter_len =  100
 backatter_1_freq = 10e3
 backatter_0_freq = backatter_1_freq * 2
 lpf_decimation = 4
@@ -100,7 +100,7 @@ def file_write(file, frames):
 
 # reading from USRP file
 signal = sp.fromfile(open("data.dat"), dtype=sp.float32)
-# print("length of signal from USRP",len(signal))
+print("length of signal from USRP",len(signal))
 
 # slice the signal
 signal = signal_slicer(signal, sig_start, sig_start+sig_len )
@@ -166,25 +166,34 @@ if 	not frame_delim:
 
 ##################################################
 #			Decoding second stage
-#  match against the delimitor and convert to hex
+#  match against the delimeter and convert to hex
 ##################################################
 
 f = open("data.txt","r")
+msg = open("msgs.txt","w")
 
-lineLen = 14 * 8
+# lineLen = (1+1+10) * 8
 cntr=0
 for l in f.readlines():
-    if len(l) > lineLen:
-        s = str(l[:lineLen])
-        hexS = hex(int(s,2))
-        if  "0xbbbbbbaa" in hexS:
-            cntr+=1
-            print( cntr,"- ", hexS )
+    # if len(l) > lineLen:
+    s = str(l) # [:lineLen])
+    hexS = hex(int(s,2))
+
+    if  "bbbbbbaa" in hexS:
+        cntr+=1
+        print( cntr,"+ ", hexS )
+        msg.write(hexS+"\n")
+    else:
+    	pass
+    	# print("-", hexS)
+    	# print()
 
 
 
-plt.plot(signal, '-')
+# plt.plot(signal[0:len(signal):4], '-')
+# plt.plot(signal_average[0:len(signal_average):4])
+plt.plot(signal)
 plt.plot(signal_average)
-plt.plot(signal_binary, '.')
+# plt.plot(signal_binary)
 
 plt.show()
